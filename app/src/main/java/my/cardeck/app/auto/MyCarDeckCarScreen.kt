@@ -177,6 +177,7 @@ class MyCarDeckCarScreen(carContext: CarContext) : Screen(carContext) {
                 settings.domStorageEnabled = true
                 settings.setGeolocationEnabled(true)
                 settings.mediaPlaybackRequiresUserGesture = false
+                settings.textZoom = 100
                 webViewClient = WebViewClient()
                 webChromeClient = WebChromeClient()
                 loadUrl("file:///android_asset/dashboard/index.html")
