@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#070a12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>NEXDRIVE OS — Malaysia RHD Automotive Cockpit</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg-deep: #060911;
+      --panel-bg: rgba(16, 22, 36, 0.86);
+      --panel-border: rgba(56, 189, 248, 0.16);
+      --neon-cyan: #00f0ff;
+      --neon-emerald: #10b981;
+      --neon-amber: #f59e0b;
+      --neon-purple: #8b5cf6;
+      --text-bright: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 75% 20%, #112240 0%, #060911 60%, #030509 100%);
+      color: var(--text-bright);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Subtle Carbon/Grid Cockpit Texture */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* =========================================================
+       MAIN WORKSPACE (LEFT/CENTER) + RHD DRIVER DOCK (RIGHT)
+       Designed specifically for Right-Hand Drive (Malaysia)
+       so big buttons are closest to the driver's right hand!
+       ========================================================= */
+    .cockpit-shell {
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .screen-stage {
+      height: 100%;
+      padding: 16px 18px;
+      display: none;
+      overflow: hidden;
+    }
+
+    .screen-stage.active {
+      display: grid;
+    }
+
+    /* RIGHT-SIDE DRIVER COMMAND RAIL (BIG EASY-TO-TAP BUTTONS) */
+    .rhd-driver-rail {
+      background: rgba(9, 13, 24, 0.96);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 8px;
+      z-index: 50;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .rail-clock-box {
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      width: 100%;
+    }
+
+    .rail-time {
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rail-date {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .rail-nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .rail-big-btn {
+      width: 100%;
+      height: 68px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-dim);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-weight: 800;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+    }
+
+    .rail-big-btn span.ico {
+      font-size: 1.55rem;
+      line-height: 1;
+    }
+
+    .rail-big-btn:active {
+      transform: scale(0.93);
+    }
+
+    .rail-big-btn.active {
+      background: linear-gradient(135deg, #0284c7, #00f0ff);
+      color: #04101c;
+      border-color: #00f0ff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+    }
+
+    /* =========================================================
+       COCKPIT PANEL CARDS (NEXDRIVE SIGNATURE DESIGN)
+       ========================================================= */
+    .nex-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(22px);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Signature Top Neon Accent Bar on Cards */
+    .nex-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 24px;
+      right: 24px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+      opacity: 0.45;
+    }
+
+    /* =========================================================
+       SCREEN 1: MAIN COCKPIT (HOME)
+       Layout: Left Telemetry & Media | Right Big 4-Apps + Radio
+       ========================================================= */
+    #stageHome {
+      grid-template-columns: 1.15fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+    }
+
+    /* Top-Left: Compact Digital Speedometer & Telemetry Bar */
+    .telemetry-pod {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 16px;
+    }
+
+    .speed-dial-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .speed-giant {
+      font-size: 2.35rem;
+      font-weight: 900;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(180deg, #ffffff 10%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .speed-meta-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .speed-unit-tag {
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    .compass-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 99px;
+    }
+
+    .env-telemetry-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .weather-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .fuel-pills-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .fuel-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 6px 10px;
+      text-align: center;
+      min-width: 78px;
+    }
+
+    .fuel-chip-lbl {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--text-dim);
+    }
+
+    .fuel-chip-val {
+      font-size: 0.95rem;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    /* Bottom-Left: Master Audio Deck (Big Touch Controls + USB Trigger + Live Lyric) */
+    .master-audio-deck {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .audio-source-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .source-mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      color: #c4b5fd;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .usb-quick-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #090b10;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .deck-track-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 6px 0;
+    }
+
+    .deck-cover {
+      width: 78px;
+      height: 78px;
+      border-radius: 18px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      flex-shrink: 0;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    }
+
+    .deck-track-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .deck-title {
+      font-size: 1.35rem;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .deck-artist {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Live Lyric Banner inside Audio Deck (Tap to open Full Lyrics) */
+    .deck-lyric-banner {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin: 10px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .deck-lyric-text {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* HUGE EASY-TO-TAP MEDIA TRANSPORT BUTTONS */
+    .giant-transport-row {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .big-transport-btn {
+      height: 58px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.07);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .big-transport-btn:active {
+      transform: scale(0.94);
+    }
+
+    .big-transport-btn.play-primary {
+      background: linear-gradient(135deg, #00f0ff, #3b82f6);
+      color: #04101c;
+      border: none;
+      box-shadow: 0 8px 24px rgba(0, 240, 255, 0.3);
+    }
+
+    /* Right Column: 4 HUGE APP TILES (2x2) + BIG RADIO BUTTONS */
+    .right-command-col {
+      grid-row: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .big-apps-card {
+      flex: 1.25;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-heading {
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .edit-pill-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* 2x2 HUGE APP TILES (Easy to press without looking!) */
+    .huge-apps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .huge-app-tile {
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      transition: transform 0.14s ease;
+      text-align: left;
+      color: #fff;
+    }
+
+    .huge-app-tile:active {
+      transform: scale(0.95);
+    }
+
+    .tile-logo-box {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tile-app-name {
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .tile-app-sub {
+      font-size: 0.74rem;
+      opacity: 0.8;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    /* Big 4-Station Live Radio Card */
+    .big-radio-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .radio-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .big-radio-tile {
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+
+    .big-radio-tile:active {
+      transform: scale(0.94);
+    }
+
+    .big-radio-tile.playing {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.15));
+      border-color: #10b981;
+      color: #34d399;
+    }
+
+    /* =========================================================
+       SCREEN 2: DEDICATED USB PENDRIVE FOLDER & SONG BROWSER!
+       Big Folders on Left | Big Song Rows on Right
+       ========================================================= */
+    #stageUsb {
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+    }
+
+    .usb-top-header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+    }
+
+    .load-real-usb-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 20px;
+      font-size: 0.92rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    }
+
+    .usb-folder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: calc(100vh - 140px);
+      padding-right: 4px;
+    }
+
+    .big-folder-btn {
+      width: 100%;
+      min-height: 68px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid transparent;
+      padding: 12px 16px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .big-folder-btn.active {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: var(--neon-amber);
+    }
+
+    .folder-ico {
+      font-size: 1.9rem;
+      flex-shrink: 0;
+    }
+
+    .folder-name {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .folder-count {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .usb-songs-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .usb-song-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 6px;
+    }
+
+    .big-song-row {
+      min-height: 64px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .big-song-row:active {
+      transform: scale(0.98);
+    }
+
+    .big-song-row.playing {
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.18), rgba(59, 130, 246, 0.08));
+      border-color: var(--neon-cyan);
+    }
+
+    .song-idx-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .big-song-row.playing .song-idx-badge {
+      background: var(--neon-cyan);
+      color: #04101c;
+    }
+
+    /* =========================================================
+       SCREEN 3: STAGE KARAOKE SYNCED LYRICS
+       ========================================================= */
+    #stageLyrics {
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .lyrics-stream-box {
+      height: 100%;
+      max-height: 82vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: safe center;
+      gap: 18px;
+      padding: 24px;
+      scroll-behavior: smooth;
+    }
+
+    .stage-lyric-line {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.28);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .stage-lyric-line.active {
+      font-size: 2.15rem;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 24px rgba(0, 240, 255, 0.5);
+    }
+
+    /* Customize 4-Apps Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 14, 0.85);
+      backdrop-filter: blur(16px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #101626;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 24px;
+      padding: 22px;
+      width: 100%;
+      max-width: 540px;
+      color: #fff;
+    }
+
+    .slot-selector-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .slot-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .slot-pill.selected {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.15);
+    }
+
+    .app-catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .catalog-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    @keyframes eqBar1 { 0%, 100% { height: 6px; } 50% { height: 22px; } }
+    @keyframes eqBar2 { 0%, 100% { height: 18px; } 40% { height: 7px; } 80% { height: 24px; } }
+    @keyframes eqBar3 { 0%, 100% { height: 9px; } 35% { height: 26px; } 70% { height: 11px; } }
+    .eq-wrap { display: inline-flex; align-items: flex-end; gap: 3px; height: 24px; }
+    .eq-b { width: 4px; border-radius: 99px; background: linear-gradient(180deg, var(--neon-amber), var(--neon-cyan)); }
+    .eq-wrap.playing .b1 { animation: eqBar1 0.7s infinite ease-in-out; }
+    .eq-wrap.playing .b2 { animation: eqBar2 0.55s infinite ease-in-out; }
+    .eq-wrap.playing .b3 { animation: eqBar3 0.65s infinite ease-in-out; }
+    .eq-wrap.playing .b4 { animation: eqBar2 0.8s infinite ease-in-out; }
+    .eq-wrap.paused .eq-b { height: 5px !important; animation: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden File Input for Reading Actual USB Pendrive Audio Folders -->
+  <input type="file" id="usbFolderInput" webkitdirectory directory multiple accept="audio/*" style="display:none;" onchange="handleRealUsbFiles(this.files)" />
+  <audio id="realAudioPlayer" style="display:none;"></audio>
+
+  <div class="cockpit-shell">
+
+    <!-- =====================================================
+         STAGE 1: NEXDRIVE MAIN COCKPIT (HOME)
+         ===================================================== -->
+    <main class="screen-stage active" id="stageHome">
+      
+      <!-- Top-Left: Big Clock + Compact Speedometer + Temperature & Live Location -->
+      <section class="nex-card telemetry-pod">
+        <!-- Big Clock & Date -->
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size: 2.75rem; font-weight: 900; line-height: 0.95; letter-spacing: -1px; color: #ffffff; font-variant-numeric: tabular-nums;" id="mainClock">14:52</div>
+          <div style="font-size: 0.78rem; font-weight: 800; color: var(--neon-amber); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px;" id="mainDate">SUN, 8 NOV</div>
+        </div>
+
+        <!-- Compact Speedometer -->
+        <div class="speed-dial-box">
+          <div class="speed-giant" id="homeSpeedVal">0</div>
+          <div class="speed-meta-col">
+            <span class="speed-unit-tag">KM/H</span>
+            <span style="font-size: 0.7rem; color: #34d399; font-weight: 800;">GPS</span>
+          </div>
+        </div>
+
+        <!-- Temperature + Live Location Cleanly Aligned Below Temperature -->
+        <div class="weather-pill" style="flex-direction:column; align-items:flex-start; gap:4px; min-width:140px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%; gap:8px;">
+            <span style="font-size: 1.35rem; font-weight: 900; line-height: 1;" id="wTemp">28°C</span>
+            <span style="font-size: 1.3rem; line-height: 1;" id="wIcon">⛅</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--neon-cyan); font-weight: 800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;" id="wDesc">📍 GPS Ready</div>
+        </div>
+      </section>
+
+      <!-- Bottom-Left: Master Audio Deck (Pendrive USB / Spotify / BitChord) -->
+      <section class="nex-card master-audio-deck">
+        <div class="deck-track-row">
+          <div class="deck-cover" id="deckCoverIcon" onclick="switchStage('usb', document.getElementById('railBtnUsb'))" style="cursor:pointer;" title="Tap to browse USB folders">💿</div>
+          <div class="deck-track-text">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div class="deck-title" id="miniTitle">Blinding Lights</div>
+              <div class="eq-wrap playing" id="deckEqWrap">
+                <div class="eq-b b1" style="height:10px;"></div>
+                <div class="eq-b b2" style="height:18px;"></div>
+                <div class="eq-b b3" style="height:14px;"></div>
+                <div class="eq-b b4" style="height:22px;"></div>
+              </div>
+            </div>
+            <div class="deck-artist" id="miniArtist" onclick="switchStage('usb', document.getElementById('railBtnUsb'))" style="cursor:pointer;">The Weeknd • Folder: 02_English_Hits</div>
+          </div>
+        </div>
+
+        <!-- Tap to open Fullscreen Synced Lyrics -->
+        <div class="deck-lyric-banner" onclick="switchStage('lyrics', document.getElementById('railBtnLyrics'))">
+          <div class="deck-lyric-text" id="miniLyricLine">🎤 I've been tryna call...</div>
+          <span style="font-size: 0.75rem; color: var(--neon-cyan); font-weight: 900; flex-shrink: 0;">FULL LYRICS →</span>
+        </div>
+
+        <!-- HUGE EASY-TO-TAP TRANSPORT BUTTONS -->
+        <div class="giant-transport-row">
+          <button class="big-transport-btn" onclick="prevTrack()">⏮ PREV</button>
+          <button class="big-transport-btn play-primary" id="masterPlayBtn" onclick="toggleMasterPlay()">⏸ PAUSE</button>
+          <button class="big-transport-btn" onclick="nextTrack()">NEXT ⏭</button>
+        </div>
+      </section>
+
+      <!-- Right Column: 4 HUGE APP TILES (2x2) + BIG LIVE RADIO BUTTONS -->
+      <div class="right-command-col">
+        
+        <!-- 4 HUGE CUSTOMIZABLE APPS (2x2) -->
+        <section class="nex-card big-apps-card">
+          <div class="card-top-bar">
+            <span class="card-heading">🚀 Quick Launch Apps (Big Touch)</span>
+            <button class="edit-pill-btn" onclick="openAppCustomizer()">⚙️ Customize 4 Apps</button>
+          </div>
+          <div class="huge-apps-grid" id="customShortcutsGrid">
+            <!-- Populated with 4 huge easy-to-tap tiles -->
+          </div>
+        </section>
+
+        <!-- Big Hardware FM Aerial Tuner Card (Uses Car Antenna / Offline MCU Chip!) -->
+        <section class="nex-card big-radio-card">
+          <div class="card-top-bar" style="margin-bottom: 8px;">
+            <span class="card-heading">📡 FM Aerial Tuner</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="edit-pill-btn" id="saveFmModeBtn" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fcd34d;" onclick="toggleFmSaveMode()">⭐ Save to Fav</button>
+              <button class="edit-pill-btn" style="padding: 4px 10px; font-size: 0.72rem;" onclick="openNativeHardwareRadio()">📻 Native FM</button>
+            </div>
+          </div>
+
+          <!-- Manual Frequency Dial & Seek Controls -->
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+            <button class="edit-pill-btn" style="height:36px; padding:0 12px;" onclick="stepFmFreq(-0.1)">⏮ -0.1 MHz</button>
+            <div style="text-align:center;">
+              <span style="font-size: 1.25rem; font-weight: 900; color: var(--neon-amber); letter-spacing: 0.5px;" id="fmFreqReadout">92.9 MHz</span>
+              <span style="font-size: 0.66rem; color: var(--text-dim); display:block; font-weight:800;" id="radioStatusBadge">HOLD ANY SLOT (OR TAP ⭐ SAVE) TO SET FAV</span>
+            </div>
+            <button class="edit-pill-btn" style="height:36px; padding:0 12px;" onclick="stepFmFreq(0.1)">+0.1 MHz ⏭</button>
+          </div>
+
+          <div class="radio-grid-4" id="fmPresetsGrid">
+            <!-- Populated dynamically with 4 customizable FM Favourites -->
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- =====================================================
+         STAGE 2: USB PENDRIVE FOLDER & SONG BROWSER
+         ===================================================== -->
+    <main class="screen-stage" id="stageUsb">
+      
+      <!-- Top Bar: USB Status & Load Real Pendrive Button -->
+      <section class="nex-card usb-top-header">
+        <div>
+          <div style="font-size: 1.25rem; font-weight: 900;">💾 USB Pendrive Music Explorer</div>
+          <div style="font-size: 0.82rem; color: var(--text-dim);" id="usbStatusSubtitle">Select a folder on the left, then tap any song on the right to play</div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="edit-pill-btn" style="padding: 12px 16px; font-size: 0.88rem;" onclick="shuffleUsbFolder()">
+            🔀 Shuffle Folder
+          </button>
+          <button class="load-real-usb-btn" onclick="document.getElementById('usbFolderInput').click()">
+            📂 Load Real USB Pendrive Folder
+          </button>
+        </div>
+      </section>
+
+      <!-- Left Column: Big Folder Buttons -->
+      <section class="nex-card" style="padding: 14px;">
+        <div class="card-heading" style="margin-bottom: 10px;">📁 USB FOLDERS</div>
+        <div class="usb-folder-list" id="usbFolderList">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- Right Column: Big Song Rows + Bottom Transport -->
+      <section class="nex-card usb-songs-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+          <span class="card-heading" id="currentFolderHeading">🎵 SONGS IN FOLDER</span>
+          <span style="font-size: 0.78rem; color: var(--neon-cyan); font-weight: 800;" id="folderTrackCount">0 Tracks</span>
+        </div>
+
+        <div class="usb-song-list" id="usbSongList">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="giant-transport-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <button class="big-transport-btn" onclick="prevTrack()">⏮ PREV</button>
+          <button class="big-transport-btn play-primary" id="usbPlayBtn" onclick="toggleMasterPlay()">⏸ PAUSE</button>
+          <button class="big-transport-btn" onclick="nextTrack()">NEXT ⏭</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- =====================================================
+         STAGE 3: STAGE KARAOKE SYNCED LYRICS
+         ===================================================== -->
+    <main class="screen-stage" id="stageLyrics">
+      <section class="nex-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 100%; height: 190px; border-radius: 18px; background: linear-gradient(135deg, #0284c7, #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 4.2rem; margin-bottom: 14px;">
+            🎤
+          </div>
+          <div style="font-size: 1.4rem; font-weight: 900;" id="fullTitle">Blinding Lights</div>
+          <div style="font-size: 0.9rem; color: var(--text-dim); margin-top: 4px;" id="fullArtist">The Weeknd</div>
+          <div style="display:flex; gap: 6px; margin-top: 12px;">
+            <input type="text" id="manualSongInput" placeholder="Search song lyrics..." style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:10px; color:#fff; font-size:0.85rem;" onkeydown="if(event.key==='Enter') searchLyricsOnline()" />
+            <button onclick="searchLyricsOnline()" style="background:var(--neon-cyan); color:#04101c; border:none; border-radius:10px; padding:0 14px; font-weight:900; cursor:pointer;">GO</button>
+          </div>
+        </div>
+
+        <div class="giant-transport-row">
+          <button class="big-transport-btn" onclick="prevTrack()">⏮</button>
+          <button class="big-transport-btn play-primary" id="lyricPlayBtn" onclick="toggleMasterPlay()">⏸</button>
+          <button class="big-transport-btn" onclick="nextTrack()">⏭</button>
+        </div>
+      </section>
+
+      <section class="nex-card" style="height: 100%;">
+        <div class="lyrics-stream-box" id="appleLyricsStream"></div>
+      </section>
+    </main>
+
+    <!-- =====================================================
+         RIGHT-HAND DRIVE (RHD) COMMAND RAIL (Always Accessible!)
+         ===================================================== -->
+    <aside class="rhd-driver-rail">
+      <div class="rail-clock-box">
+        <div class="rail-time" id="railClock">14:51</div>
+        <div class="rail-date" id="railDate">SUN 8 NOV</div>
+      </div>
+
+      <div class="rail-nav-group">
+        <button class="rail-big-btn active" id="railBtnHome" onclick="switchStage('home', this)">
+          <span class="ico">🏠</span>
+          <span>COCKPIT</span>
+        </button>
+        <button class="rail-big-btn" id="railBtnUsb" onclick="switchStage('usb', this)">
+          <span class="ico">💾</span>
+          <span>PENDRIVE</span>
+        </button>
+        <button class="rail-big-btn" id="railBtnLyrics" onclick="switchStage('lyrics', this)">
+          <span class="ico">🎤</span>
+          <span>LYRICS</span>
+        </button>
+        <button class="rail-big-btn" onclick="launchShortcutApp('waze')">
+          <span class="ico">🧭</span>
+          <span>WAZE</span>
+        </button>
+      </div>
+
+      <button onclick="cycleAmbientTheme()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 6px 8px; color: #fff; font-size: 0.65rem; font-weight: 900; cursor: pointer;">
+        🎨 THEME
+      </button>
+    </aside>
+
+  </div>
+
+  <!-- Customize 4 Apps Modal -->
+  <div class="modal-backdrop" id="appCustomizeModal" onclick="if(event.target===this) closeAppCustomizer()">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size: 1.1rem; font-weight: 900;">⚙️ Customize 4 Big App Tiles</div>
+          <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">Select a slot (Slot 1–4) below, then tap the app to assign:</div>
+        </div>
+        <button onclick="closeAppCustomizer()" style="background:rgba(255,255,255,0.1); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:900;">✕</button>
+      </div>
+      <div class="slot-selector-row" id="modalSlotSelector"></div>
+      <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: 800; text-transform: uppercase;">Choose App for Selected Slot:</div>
+      <div class="app-catalog-grid" id="modalAppCatalog"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. BIG 4-APP CATALOG (INCLUDING USB PENDRIVE & WAZE)
+    // ==========================================
+    const APP_CATALOG = {
+      waze: {
+        id: 'waze', name: 'Waze', sub: 'Live Traffic & Nav',
+        bg: 'linear-gradient(135deg, #0284c7, #0369a1)', pkg: 'com.waze', url: 'https://waze.com/ul',
+        svg: `<svg width="30" height="30" viewBox="0 0 24 24" fill="#38bdf8"><path d="M18.5 18a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0zm-9.5 0a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0zM12.2 3.5c5.1 0 9.3 3.7 9.3 8.3 0 2.1-.8 4-2.2 5.4-.3.3-.7.5-1.2.5H6.3c-1.9 0-3.5-1-4.3-2.5-.2-.4.1-.9.5-.9.9 0 1.6-.6 1.7-1.5C4.6 7.7 8 3.5 12.2 3.5z"/></svg>`
+      },
+      usb: {
+        id: 'usb', name: 'USB Music', sub: 'Pendrive Folders',
+        bg: 'linear-gradient(135deg, #d97706, #b45309)', pkg: 'internal.usb', url: '#usb',
+        svg: `<svg width="28" height="28" viewBox="0 0 24 24" fill="#fde68a"><path d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.7-.37 1.2-1.08 1.2-1.93 0-1.21-.99-2.2-2.2-2.2S4.8 7.79 4.8 9c0 .85.5 1.56 1.2 1.93V13c0 1.11.89 2 2 2h3v3.05c-.71.37-1.2 1.1-1.2 1.95a2.2 2.2 0 1 0 4.4 0c0-.85-.49-1.58-1.2-1.95V15h3c1.11 0 2-.89 2-2v-2h1V7h-4z"/></svg>`
+      },
+      youtube: {
+        id: 'youtube', name: 'YouTube', sub: 'Video Stream',
+        bg: 'linear-gradient(135deg, #dc2626, #991b1b)', pkg: 'com.google.android.youtube', url: 'https://www.youtube.com',
+        svg: `<svg width="30" height="30" viewBox="0 0 24 24" fill="#ffffff"><path d="M21.8 8.001a2.75 2.75 0 0 0-1.94-1.94C18.14 5.6 12 5.6 12 5.6s-6.14 0-7.86.46a2.75 2.75 0 0 0-1.94 1.94C1.74 9.72 1.74 12 1.74 12s0 2.28.46 3.999a2.75 2.75 0 0 0 1.94 1.94c1.72.46 7.86.46 7.86.46s6.14 0 7.86-.46a2.75 2.75 0 0 0 1.94-1.94c.46-1.72.46-4 .46-4s0-2.28-.46-3.999zM9.95 15.02V8.98L15.2 12l-5.25 3.02z"/></svg>`
+      },
+      spotify: {
+        id: 'spotify', name: 'Spotify', sub: 'Music & Podcasts',
+        bg: 'linear-gradient(135deg, #16a34a, #15803d)', pkg: 'com.spotify.music', url: 'https://open.spotify.com',
+        svg: `<svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.58 14.42a.62.62 0 0 1-.85.2c-2.34-1.43-5.28-1.75-8.75-.96a.62.62 0 1 1-.28-1.21c3.8-.87 7.06-.5 9.67 1.1a.62.62 0 0 1 .21.87zm1.22-2.72a.78.78 0 0 1-1.07.26c-2.68-1.65-6.76-2.12-9.93-1.16a.78.78 0 0 1-.45-1.5c3.63-1.1 8.13-.57 11.2 1.32.37.23.48.71.25 1.08z"/></svg>`
+      },
+      bitchord: {
+        id: 'bitchord', name: 'BitChord', sub: 'Ad-Free Music',
+        bg: 'linear-gradient(135deg, #7c3aed, #db2777)', pkg: 'app.bitchord.music', url: 'https://bitchord.org',
+        svg: `<svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>`
+      },
+      ytmusic: {
+        id: 'ytmusic', name: 'YT Music', sub: 'Music Stream',
+        bg: 'linear-gradient(135deg, #e11d48, #881337)', pkg: 'com.google.android.apps.youtube.music', url: 'https://music.youtube.com',
+        svg: `<svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 14.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>`
+      },
+      netflix: {
+        id: 'netflix', name: 'Netflix', sub: 'Cinema Mode',
+        bg: 'linear-gradient(135deg, #27272a, #09090b)', pkg: 'com.netflix.mediaclient', url: 'https://www.netflix.com',
+        svg: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#e50914"><path d="M5 2h3.8l6.4 13.8V2H19v20h-3.8L8.8 8.2V22H5V2z"/></svg>`
+      },
+      tiktok: {
+        id: 'tiktok', name: 'TikTok', sub: 'Short Videos',
+        bg: 'linear-gradient(135deg, #0f172a, #1e293b)', pkg: 'com.ss.android.ugc.trill', url: 'https://www.tiktok.com',
+        svg: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#2dd4bf"><path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg>`
+      },
+      whatsapp: {
+        id: 'whatsapp', name: 'WhatsApp', sub: 'Messages',
+        bg: 'linear-gradient(135deg, #16a34a, #14532d)', pkg: 'com.whatsapp', url: 'https://web.whatsapp.com',
+        svg: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.04 2a9.9 9.9 0 0 0-8.53 14.9L2 22l5.25-1.38A9.9 9.9 0 1 0 12.04 2z"/></svg>`
+      },
+      gmaps: {
+        id: 'gmaps', name: 'Maps', sub: 'Google Maps',
+        bg: 'linear-gradient(135deg, #2563eb, #1e3a8a)', pkg: 'com.google.android.apps.maps', url: 'https://maps.google.com',
+        svg: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`
+      }
+    };
+
+    // Default 4 Big Apps: Waze, USB Pendrive Music, Spotify, YouTube
+    let userShortcuts = ['waze', 'usb', 'spotify', 'youtube'];
+    let activeEditSlot = 0;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('nexdrive_4apps'));
+      if (Array.isArray(saved) && saved.length === 4) userShortcuts = saved;
+    } catch (e) {}
+
+    function renderShortcutsGrid() {
+      const grid = document.getElementById('customShortcutsGrid');
+      grid.innerHTML = userShortcuts.map(key => {
+        const app = APP_CATALOG[key] || APP_CATALOG.waze;
+        return `
+          <button class="huge-app-tile" style="background: ${app.bg};" onclick="launchShortcutApp('${app.id}')">
+            <div class="tile-logo-box">${app.svg}</div>
+            <div>
+              <div class="tile-app-name">${app.name}</div>
+              <div class="tile-app-sub">${app.sub}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function launchShortcutApp(appKey) {
+      if (appKey === 'usb') {
+        switchStage('usb', document.getElementById('railBtnUsb'));
+        return;
+      }
+      const app = APP_CATALOG[appKey] || APP_CATALOG.waze;
+      if (window.AndroidBridge && window.AndroidBridge.launchApp) {
+        window.AndroidBridge.launchApp(app.pkg, app.url);
+      } else {
+        window.open(app.url, '_blank');
+      }
+    }
+
+    function openAppCustomizer() {
+      document.getElementById('appCustomizeModal').classList.add('open');
+      renderCustomizerModal();
+    }
+
+    function closeAppCustomizer() {
+      document.getElementById('appCustomizeModal').classList.remove('open');
+    }
+
+    function renderCustomizerModal() {
+      document.getElementById('modalSlotSelector').innerHTML = userShortcuts.map((key, idx) => {
+        const app = APP_CATALOG[key] || APP_CATALOG.waze;
+        return `
+          <div class="slot-pill ${idx === activeEditSlot ? 'selected' : ''}" onclick="activeEditSlot=${idx}; renderCustomizerModal();">
+            <div style="font-size:0.68rem; color:#94a3b8;">Slot ${idx + 1}</div>
+            <div style="margin-top:4px; color:#fff;">${app.name}</div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('modalAppCatalog').innerHTML = Object.values(APP_CATALOG).map(app => `
+        <div class="catalog-item" onclick="assignAppToSlot('${app.id}')">
+          <div style="width:40px; height:40px; border-radius:10px; background:${app.bg}; display:flex; align-items:center; justify-content:center;">
+            ${app.svg}
+          </div>
+          <span>${app.name}</span>
+        </div>
+      `).join('');
+    }
+
+    function assignAppToSlot(appId) {
+      userShortcuts[activeEditSlot] = appId;
+      localStorage.setItem('nexdrive_4apps', JSON.stringify(userShortcuts));
+      renderShortcutsGrid();
+      activeEditSlot = (activeEditSlot + 1) % 4;
+      renderCustomizerModal();
+    }
+
+    renderShortcutsGrid();
+
+    // ==========================================
+    // 2. USB PENDRIVE FOLDERS & MP3 EXPLORER
+    // ==========================================
+    let usbFolders = [
+      {
+        name: "01_Malay_Rock_Kapak",
+        tracks: [
+          { title: "Mentera Semerah Padi", artist: "M. Nasir", dur: "4:42", lines: ["🎶 Aduhai kasih, aduhai sayang...", "Putih-putih melati, merah-merah delima", "Siapa yang baik hati, pasti ku terima", "Semerah padi, semangat membara!"] },
+          { title: "Tapi Bukan Aku", artist: "Kerispatih", dur: "4:28", lines: ["Jangan lagi kau sesali keputusanku", "Ku tak ingin kau semakin 'kan terluka", "Tak ingin kupaksakan cinta ini", "Meski tiada sanggup untuk kau terima"] },
+          { title: "Isabella", artist: "Search", dur: "5:05", lines: ["Isabella adalah kisah cinta dua dunia", "Mengapa kita ditemukan", "Dan akhirnya kita dipisahkan", "Terpaksa aku lepaskanmu..."] }
+        ]
+      },
+      {
+        name: "02_English_Billboard_Hits",
+        tracks: [
+          { title: "Blinding Lights", artist: "The Weeknd", dur: "3:20", lines: ["I've been tryna call", "I've been on my own for long enough", "Maybe you can show me how to love, maybe", "I said, ooh, I'm blinded by the lights!"] },
+          { title: "Starboy", artist: "The Weeknd ft. Daft Punk", dur: "3:50", lines: ["I'm tryna put you in the worst mood, ah", "P1 cleaner than your church shoes, ah", "Look what you've done", "I'm a motherfuckin' Starboy!"] },
+          { title: "Hotel California", artist: "Eagles", dur: "6:30", lines: ["On a dark desert highway, cool wind in my hair", "Warm smell of colitas, rising up through the air", "Welcome to the Hotel California", "Such a lovely place, such a lovely face"] }
+        ]
+      },
+      {
+        name: "03_Mandarin_Cantonese_Gold",
+        tracks: [
+          { title: "光辉岁月 (Guang Hui Sui Yue)", artist: "Beyond", dur: "4:58", lines: ["钟声响起归家的讯号", "在他生命里 仿佛带点唏嘘", "今天只有残留的躯壳 迎接光辉岁月", "风雨中抱紧自由!"] },
+          { title: "海阔天空 (Hai Kuo Tian Kong)", artist: "Beyond", dur: "5:26", lines: ["今天我 寒夜里看雪飘过", "怀着冷却了的心窝漂远方", "原谅我这一生不羁放纵爱自由", "也会怕有一天会跌倒!"] }
+        ]
+      },
+      {
+        name: "04_Tamil_Vibe_Hits",
+        tracks: [
+          { title: "Why This Kolaveri Di", artist: "Dhanush", dur: "4:19", lines: ["Yo boys, I am singing song...", "Soup song... flop song...", "Why this Kolaveri Kolaveri Kolaveri Di?", "Handla glass, glassla scotch, eyes-u full-aa tear-u!"] },
+          { title: "Arabic Kuthu (Halamithi Habibo)", artist: "Anirudh Ravichander", dur: "4:39", lines: ["Halamithi Habibo... Habibo!", "Malama Pitha Pithadhe!", "Come and dance with the rhythm now", "Halamithi Habibo!"] }
+        ]
+      },
+      {
+        name: "05_Car_Bass_DJ_Remix",
+        tracks: [
+          { title: "Tokyo Drift (Bass Boosted)", artist: "Teriyaki Boyz", dur: "4:15", lines: ["I wonder if you know", "How they live in Tokyo (If you seen it, then you mean it)", "Fast and furious! (Drift, Drift, Drift)", "Gas, gas, gas — stepping on the gas!"] }
+        ]
+      }
+    ];
+
+    let activeFolderIdx = 1;
+    let activeTrackIdx = 0;
+    let lyricLineIdx = 0;
+    let isPlaying = true;
+
+    function renderUsbExplorer() {
+      const fList = document.getElementById('usbFolderList');
+      fList.innerHTML = usbFolders.map((f, idx) => `
+        <button class="big-folder-btn ${idx === activeFolderIdx ? 'active' : ''}" onclick="selectUsbFolder(${idx})">
+          <span class="folder-ico">${idx === activeFolderIdx ? '📂' : '📁'}</span>
+          <div>
+            <div class="folder-name">${f.name}</div>
+            <div class="folder-count">${f.tracks.length} Audio Files (MP3/FLAC)</div>
+          </div>
+        </button>
+      `).join('');
+
+      const folder = usbFolders[activeFolderIdx];
+      document.getElementById('currentFolderHeading').textContent = `📂 ${folder.name}`;
+      document.getElementById('folderTrackCount').textContent = `${folder.tracks.length} Tracks`;
+
+      const sList = document.getElementById('usbSongList');
+      sList.innerHTML = folder.tracks.map((tr, tIdx) => {
+        const playingHere = tIdx === activeTrackIdx;
+        return `
+          <div class="big-song-row ${playingHere ? 'playing' : ''}" onclick="playUsbTrack(${activeFolderIdx}, ${tIdx})">
+            <div style="display:flex; align-items:center; gap: 14px; min-width:0;">
+              <div class="song-idx-badge">${playingHere ? '🔊' : (tIdx + 1)}</div>
+              <div style="min-width:0;">
+                <div style="font-size: 1.05rem; font-weight: 900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${tr.title}</div>
+                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">${tr.artist}</div>
+              </div>
+            </div>
+            <div style="font-size: 0.85rem; font-weight: 800; color: var(--neon-cyan); flex-shrink:0;">${tr.dur}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectUsbFolder(fIdx) {
+      activeFolderIdx = fIdx;
+      activeTrackIdx = 0;
+      lyricLineIdx = 0;
+      renderUsbExplorer();
+      syncCurrentTrackToUI();
+    }
+
+    function playUsbTrack(fIdx, tIdx) {
+      activeFolderIdx = fIdx;
+      activeTrackIdx = tIdx;
+      lyricLineIdx = 0;
+      isPlaying = true;
+      const tr = usbFolders[fIdx].tracks[tIdx];
+      const audioEl = document.getElementById('realAudioPlayer');
+      if (tr.fileUrl) {
+        audioEl.src = tr.fileUrl;
+        audioEl.play().catch(() => {});
+      } else {
+        audioEl.pause();
+      }
+      renderUsbExplorer();
+      syncCurrentTrackToUI();
+    }
+
+    // Reads real MP3/FLAC files when user selects a USB Pendrive directory!
+    function handleRealUsbFiles(fileList) {
+      if (!fileList || !fileList.length) return;
+      const folderMap = {};
+      for (const file of fileList) {
+        if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|flac|m4a|wav|ogg)$/i)) continue;
+        const parts = (file.webkitRelativePath || file.name).split('/');
+        const folderName = parts.length > 1 ? parts[parts.length - 2] : "USB_Root_Music";
+        if (!folderMap[folderName]) folderMap[folderName] = [];
+        const cleanTitle = file.name.replace(/\.(mp3|flac|m4a|wav|ogg)$/i, '');
+        folderMap[folderName].push({
+          title: cleanTitle,
+          artist: `USB Pendrive • ${folderName}`,
+          dur: "MP3",
+          fileUrl: URL.createObjectURL(file),
+          lines: [
+            `🎵 Playing from USB: ${cleanTitle}`,
+            `📂 Folder: ${folderName}`,
+            "Tap 'GO' in Lyrics tab to fetch online synced lyrics!"
+          ]
+        });
+      }
+      const newFolders = Object.keys(folderMap).map(k => ({ name: k, tracks: folderMap[k] }));
+      if (newFolders.length > 0) {
+        usbFolders = newFolders;
+        activeFolderIdx = 0;
+        activeTrackIdx = 0;
+        document.getElementById('usbStatusSubtitle').textContent = `Loaded ${newFolders.length} real folders from your USB drive!`;
+        playUsbTrack(0, 0);
+      }
+    }
+
+    function syncCurrentTrackToUI() {
+      const folder = usbFolders[activeFolderIdx];
+      const tr = folder.tracks[activeTrackIdx] || folder.tracks[0];
+      if (!tr) return;
+
+      document.getElementById('miniTitle').textContent = tr.title;
+      document.getElementById('miniArtist').textContent = `${tr.artist} • Folder: ${folder.name}`;
+      document.getElementById('fullTitle').textContent = tr.title;
+      document.getElementById('fullArtist').textContent = `${tr.artist} (${folder.name})`;
+
+      const lines = tr.lines || ["🎶 Playing audio track..."];
+      const curLine = lines[lyricLineIdx % lines.length];
+      document.getElementById('miniLyricLine').textContent = `🎤 ${curLine}`;
+
+      const stream = document.getElementById('appleLyricsStream');
+      stream.innerHTML = lines.map((line, i) => `
+        <div class="stage-lyric-line ${i === (lyricLineIdx % lines.length) ? 'active' : ''}" onclick="lyricLineIdx=${i};syncCurrentTrackToUI()">
+          ${line}
+        </div>
+      `).join('');
+
+      const playTxt = isPlaying ? "⏸ PAUSE" : "▶ PLAY";
+      document.getElementById('masterPlayBtn').textContent = playTxt;
+      document.getElementById('usbPlayBtn').textContent = playTxt;
+      document.getElementById('lyricPlayBtn').textContent = isPlaying ? "⏸" : "▶";
+      const eq = document.getElementById('deckEqWrap');
+      if (eq) {
+        eq.classList.toggle('playing', isPlaying);
+        eq.classList.toggle('paused', !isPlaying);
+      }
+    }
+
+    function shuffleUsbFolder() {
+      const folder = usbFolders[activeFolderIdx];
+      const randIdx = Math.floor(Math.random() * folder.tracks.length);
+      playUsbTrack(activeFolderIdx, randIdx);
+    }
+
+    const AMBIENT_THEMES = [
+      { cyan: '#00f0ff', amber: '#f59e0b' },
+      { cyan: '#10b981', amber: '#06b6d4' },
+      { cyan: '#f97316', amber: '#ef4444' },
+      { cyan: '#ec4899', amber: '#a855f7' }
+    ];
+    let curThemeIdx = 0;
+
+    function cycleAmbientTheme() {
+      curThemeIdx = (curThemeIdx + 1) % AMBIENT_THEMES.length;
+      const th = AMBIENT_THEMES[curThemeIdx];
+      document.documentElement.style.setProperty('--neon-cyan', th.cyan);
+      document.documentElement.style.setProperty('--neon-amber', th.amber);
+    }
+
+    function nextTrack() {
+      const folder = usbFolders[activeFolderIdx];
+      activeTrackIdx = (activeTrackIdx + 1) % folder.tracks.length;
+      lyricLineIdx = 0;
+      playUsbTrack(activeFolderIdx, activeTrackIdx);
+    }
+
+    function prevTrack() {
+      const folder = usbFolders[activeFolderIdx];
+      activeTrackIdx = (activeTrackIdx - 1 + folder.tracks.length) % folder.tracks.length;
+      lyricLineIdx = 0;
+      playUsbTrack(activeFolderIdx, activeTrackIdx);
+    }
+
+    function toggleMasterPlay() {
+      isPlaying = !isPlaying;
+      const audioEl = document.getElementById('realAudioPlayer');
+      if (audioEl.src) {
+        if (isPlaying) audioEl.play().catch(() => {});
+        else audioEl.pause();
+      }
+      syncCurrentTrackToUI();
+    }
+
+    setInterval(() => {
+      if (isPlaying) {
+        lyricLineIdx++;
+        syncCurrentTrackToUI();
+      }
+    }, 2400);
+
+    // ==========================================
+    // 3. NAVIGATION, CLOCK, GPS & FUEL API
+    // ==========================================
+    function switchStage(stageKey, btnEl) {
+      document.querySelectorAll('.screen-stage').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.rail-big-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+
+      if (stageKey === 'home') document.getElementById('stageHome').classList.add('active');
+      else if (stageKey === 'usb') document.getElementById('stageUsb').classList.add('active');
+      else if (stageKey === 'lyrics') document.getElementById('stageLyrics').classList.add('active');
+    }
+
+    function updateClocks() {
+      const now = new Date();
+      const tStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const dStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      document.getElementById('railClock').textContent = tStr;
+      document.getElementById('railDate').textContent = dStr;
+      const mc = document.getElementById('mainClock');
+      const md = document.getElementById('mainDate');
+      if (mc) mc.textContent = tStr;
+      if (md) md.textContent = dStr;
+    }
+    setInterval(updateClocks, 1000);
+    updateClocks();
+
+    let currentFmFreq = 92.9;
+    let fmSaveMode = false;
+    let fmHoldTimer = null;
+
+    const MY_STATIONS_MAP = {
+      '92.9': 'HITZ FM', '103.3': 'ERA FM', '101.8': 'MY FM', '99.3': 'RAAGA',
+      '94.5': 'MIX FM', '95.8': 'FLY FM', '96.7': 'SINAR FM', '97.6': 'HOT FM',
+      '98.8': '988 FM', '105.3': 'SURIA FM', '105.7': 'LITE FM', '104.9': 'MELODY',
+      '91.5': 'IKIM FM', '90.3': 'TRAXX FM', '88.1': 'EIGHT FM', '93.9': 'BERNAMA'
+    };
+
+    let fmPresets = [
+      { freq: '92.9', label: 'HITZ FM' },
+      { freq: '103.3', label: 'ERA FM' },
+      { freq: '101.8', label: 'MY FM' },
+      { freq: '99.3', label: 'RAAGA' }
+    ];
+
+    try {
+      const savedFm = JSON.parse(localStorage.getItem('nexdrive_fm_presets'));
+      if (Array.isArray(savedFm) && savedFm.length === 4) fmPresets = savedFm;
+    } catch (e) {}
+
+    function renderFmPresets() {
+      const grid = document.getElementById('fmPresetsGrid');
+      if (!grid) return;
+      const curStr = currentFmFreq.toFixed(1);
+      grid.innerHTML = fmPresets.map((p, idx) => {
+        const isPlaying = (p.freq === curStr) && !fmSaveMode;
+        const saveStyle = fmSaveMode ? 'border: 1.5px dashed #fbbf24; background: rgba(245,158,11,0.18);' : '';
+        return `
+          <button class="big-radio-tile ${isPlaying ? 'playing' : ''}" style="${saveStyle}"
+            onmousedown="startFmHold(${idx})" onmouseup="clearFmHold()" onmouseleave="clearFmHold()"
+            ontouchstart="startFmHold(${idx})" ontouchend="clearFmHold()"
+            onclick="handleFmPresetClick(${idx})">
+            <span>${fmSaveMode ? '💾 SAVE' : p.freq}</span>
+            <span style="font-size: 0.65rem; color: var(--text-dim);">${fmSaveMode ? 'SLOT ' + (idx + 1) : p.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleFmSaveMode() {
+      fmSaveMode = !fmSaveMode;
+      const btn = document.getElementById('saveFmModeBtn');
+      const badge = document.getElementById('radioStatusBadge');
+      if (fmSaveMode) {
+        btn.textContent = '✕ Cancel Save';
+        badge.textContent = `👉 TAP ANY SLOT (1–4) BELOW TO SAVE ${currentFmFreq.toFixed(1)} MHz!`;
+        badge.style.color = '#fbbf24';
+      } else {
+        btn.textContent = '⭐ Save to Fav';
+        badge.textContent = `📡 ANT STEREO • ${currentFmFreq.toFixed(1)} MHz`;
+        badge.style.color = '#34d399';
+      }
+      renderFmPresets();
+    }
+
+    function saveFmToSlot(idx) {
+      const fStr = currentFmFreq.toFixed(1);
+      const autoLabel = MY_STATIONS_MAP[fStr] || `FAV ${idx + 1}`;
+      fmPresets[idx] = { freq: fStr, label: autoLabel };
+      try {
+        localStorage.setItem('nexdrive_fm_presets', JSON.stringify(fmPresets));
+      } catch (e) {}
+      fmSaveMode = false;
+      const btn = document.getElementById('saveFmModeBtn');
+      if (btn) btn.textContent = '⭐ Save to Fav';
+      const badge = document.getElementById('radioStatusBadge');
+      if (badge) {
+        badge.textContent = `✅ SAVED ${fStr} MHz (${autoLabel}) TO SLOT ${idx + 1}!`;
+        badge.style.color = '#34d399';
+      }
+      renderFmPresets();
+    }
+
+    function startFmHold(idx) {
+      clearFmHold();
+      fmHoldTimer = setTimeout(() => {
+        fmHoldTimer = 'triggered';
+        saveFmToSlot(idx);
+      }, 700);
+    }
+
+    function clearFmHold() {
+      if (fmHoldTimer && fmHoldTimer !== 'triggered') {
+        clearTimeout(fmHoldTimer);
+        fmHoldTimer = null;
+      }
+    }
+
+    function handleFmPresetClick(idx) {
+      if (fmHoldTimer === 'triggered') {
+        fmHoldTimer = null;
+        return;
+      }
+      if (fmSaveMode) {
+        saveFmToSlot(idx);
+      } else {
+        const p = fmPresets[idx];
+        tuneAerialFm(p.freq, p.label);
+      }
+    }
+
+    function tuneAerialFm(freqStr, stationName) {
+      currentFmFreq = parseFloat(freqStr) || 92.9;
+      const fText = currentFmFreq.toFixed(1);
+      const stName = stationName || MY_STATIONS_MAP[fText] || 'FM Aerial';
+      document.getElementById('fmFreqReadout').textContent = `${fText} MHz`;
+      const badge = document.getElementById('radioStatusBadge');
+      badge.textContent = `📡 ANT STEREO • ${fText} MHz (${stName})`;
+      badge.style.color = '#34d399';
+      document.getElementById('miniTitle').textContent = `${fText} MHz — ${stName}`;
+      document.getElementById('miniArtist').textContent = "Internal Car Aerial FM Tuner • No Internet Used";
+      document.getElementById('miniLyricLine').textContent = `📡 Receiving FM ${fText} MHz via Car Antenna (Stereo)`;
+
+      renderFmPresets();
+
+      if (window.AndroidBridge && window.AndroidBridge.tuneHardwareFm) {
+        window.AndroidBridge.tuneHardwareFm(fText);
+      }
+    }
+
+    function stepFmFreq(delta) {
+      currentFmFreq = Math.round((currentFmFreq + delta) * 10) / 10;
+      if (currentFmFreq > 108.0) currentFmFreq = 87.5;
+      if (currentFmFreq < 87.5) currentFmFreq = 108.0;
+      const fStr = currentFmFreq.toFixed(1);
+      tuneAerialFm(fStr, MY_STATIONS_MAP[fStr] || 'FM Manual Tune');
+    }
+
+    renderFmPresets();
+
+    function openNativeHardwareRadio() {
+      if (window.AndroidBridge && window.AndroidBridge.openHardwareRadioApp) {
+        window.AndroidBridge.openHardwareRadioApp();
+      }
+    }
+
+    // Live GPS Speed, Temperature & Reverse-Geocoded Location Below Temperature
+    let lastGeoFetch = 0;
+    if ("geolocation" in navigator) {
+      navigator.geolocation.watchPosition(async pos => {
+        const kmh = pos.coords.speed && pos.coords.speed > 0 ? Math.round(pos.coords.speed * 3.6) : 0;
+        document.getElementById('homeSpeedVal').textContent = kmh;
+
+        const nowMs = Date.now();
+        if (nowMs - lastGeoFetch > 60000) {
+          lastGeoFetch = nowMs;
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          try {
+            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            const wData = await wRes.json();
+            if (wData && wData.current_weather) {
+              document.getElementById('wTemp').textContent = `${Math.round(wData.current_weather.temperature)}°C`;
+            }
+          } catch (e) {}
+          try {
+            const gRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
+            const gData = await gRes.json();
+            if (gData && gData.address) {
+              const area = gData.address.suburb || gData.address.town || gData.address.city || gData.address.state || "GPS Active";
+              document.getElementById('wDesc').textContent = `📍 ${area}`;
+            }
+          } catch (e) {}
+        }
+      }, () => {}, { enableHighAccuracy: true });
+    }
+
+    async function searchLyricsOnline() {
+      const q = document.getElementById('manualSongInput').value.trim();
+      if (!q) return;
+      try {
+        const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(q)}`);
+        const items = await res.json();
+        if (Array.isArray(items) && items.length > 0) {
+          const best = items[0];
+          const raw = (best.syncedLyrics || best.plainLyrics || "").split('\n').map(l => l.replace(/\[.*?\]/g, '').trim()).filter(Boolean);
+          if (raw.length) {
+            usbFolders[activeFolderIdx].tracks[activeTrackIdx].lines = raw;
+            lyricLineIdx = 0;
+            syncCurrentTrackToUI();
+          }
+        }
+      } catch (e) {}
+    }
+
+    renderUsbExplorer();
+    syncCurrentTrackToUI();
+  </script>
+</body>
+</html>
