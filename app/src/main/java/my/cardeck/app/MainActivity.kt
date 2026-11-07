@@ -17,6 +17,9 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
@@ -46,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        hideSystemBars()
 
         requestLocationPermissionIfNeeded()
 
@@ -54,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             settings.domStorageEnabled = true
             settings.setGeolocationEnabled(true)
             settings.mediaPlaybackRequiresUserGesture = false
+            settings.textZoom = 100
 
             webViewClient = WebViewClient()
             webChromeClient = object : WebChromeClient() {
@@ -72,8 +77,20 @@ class MainActivity : AppCompatActivity() {
         setContentView(webView)
     }
 
+    private fun hideSystemBars() {
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } catch (_: Exception) {}
+    }
+
     override fun onResume() {
         super.onResume()
+        hideSystemBars()
         handler.post(mediaPoller)
     }
 
