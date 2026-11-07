@@ -1,0 +1,10 @@
+{
+  "name": "MyCarDeck Malaysia Dashboard",
+  "short_name": "MyCarDeck",
+  "description": "Dashboard Kereta Malaysia: Lirik Bergerak, Harga Minyak, Cuaca & Speedometer GPS",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#070b14",
+  "theme_color": "#070b14"
+}
