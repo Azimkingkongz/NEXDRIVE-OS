@@ -12,7 +12,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="MyCarDeck"
+        android:label="NEXDRIVE OS"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -30,6 +30,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,18 +38,7 @@
             </intent-filter>
         </activity>
 
-        <!-- 2. Notification / Media Session Listener (Auto-detects Spotify, YT Music, BitChord) -->
-        <service
-            android:name=".MediaTrackerService"
-            android:label="MyCarDeck Media Sync"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <!-- 3. Native Android Auto CarAppService (Renders Full Custom Dashboard Surface in Android Auto) -->
+        <!-- 2. Native Android Auto CarAppService (Renders Full Custom Dashboard Surface in Android Auto) -->
         <service
             android:name=".auto.MyCarDeckAutoService"
             android:exported="true">
