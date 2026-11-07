@@ -1,12 +1,10 @@
 package my.cardeck.app
 
-import android.content.ComponentName
+import android.content.BroadcastReceiver
 import android.content.Context
-import android.media.MediaMetadata
-import android.media.session.MediaController
-import android.media.session.MediaSessionManager
-import android.media.session.PlaybackState
-import android.service.notification.NotificationListenerService
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
@@ -32,29 +30,6 @@ object MediaStateHolder {
         return (positionMs + delta).coerceAtLeast(0L) / 1000.0
     }
 
-    fun currentLyricWindow(): Triple<String, String, String> {
-        if (lyrics.isEmpty()) {
-            return Triple(
-                if (title.isNotEmpty()) "🎵 $title - $artist" else "Tiada lagu dikesan",
-                "Mainkan lagu di Spotify / YT Music / BitChord",
-                "Pastikan Notification Access dibenarkan untuk MyCarDeck"
-            )
-        }
-        val nowSec = currentEstimatedPositionSec()
-        var idx = 0
-        for (i in lyrics.indices) {
-            if (nowSec >= lyrics[i].timeSec) {
-                idx = i
-            } else {
-                break
-            }
-        }
-        val prev = if (idx > 0) lyrics[idx - 1].text else "..."
-        val curr = "🎤 " + lyrics[idx].text
-        val next = if (idx + 1 < lyrics.size) lyrics[idx + 1].text else "..."
-        return Triple(prev, curr, next)
-    }
-
     fun fetchLyricsIfNeeded() {
         val t = title.trim()
         val a = artist.trim()
@@ -70,7 +45,7 @@ object MediaStateHolder {
                 val conn = (url.openConnection() as HttpURLConnection).apply {
                     connectTimeout = 6000
                     readTimeout = 6000
-                    setRequestProperty("User-Agent", "MyCarDeck-Android/1.0")
+                    setRequestProperty("User-Agent", "NEXDRIVE-OS-Android/2.0")
                 }
                 val body = conn.inputStream.bufferedReader().use { it.readText() }
                 val arr = JSONArray(body)
@@ -116,46 +91,50 @@ object MediaStateHolder {
     }
 }
 
-class MediaTrackerService : NotificationListenerService() {
+/**
+ * Play-Protect-Safe Media Tracker using standard Android & Spotify Media Broadcast Intents
+ * (Does NOT use BIND_NOTIFICATION_LISTENER_SERVICE so Malaysia Google Play Protect never blocks installation).
+ */
+object MediaTrackerService {
+    private var receiverRegistered = false
 
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        pollActiveSessions(this)
-    }
+    private val mediaReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent == null) return
+            val track = intent.getStringExtra("track") ?: intent.getStringExtra("title")
+            val artist = intent.getStringExtra("artist") ?: ""
+            val length = intent.getLongExtra("length", 240000L)
+            val pos = intent.getLongExtra("playbackPosition", 0L)
+            val playing = intent.getBooleanExtra("playing", true)
 
-    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification?) {
-        pollActiveSessions(this)
-    }
-
-    companion object {
-        fun pollActiveSessions(context: Context) {
-            try {
-                val msm = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
-                val comp = ComponentName(context, MediaTrackerService::class.java)
-                val controllers: List<MediaController> = msm.getActiveSessions(comp)
-                val active = controllers.firstOrNull {
-                    it.playbackState?.state == PlaybackState.STATE_PLAYING
-                } ?: controllers.firstOrNull() ?: return
-
-                val meta = active.metadata
-                val state = active.playbackState
-                val newTitle = meta?.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
-                val newArtist = meta?.getString(MediaMetadata.METADATA_KEY_ARTIST).orEmpty()
-                val dur = meta?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 240000L
-
-                if (newTitle.isNotEmpty()) {
-                    MediaStateHolder.title = newTitle
-                    MediaStateHolder.artist = newArtist
-                    MediaStateHolder.durationMs = if (dur > 0) dur else 240000L
-                    MediaStateHolder.positionMs = state?.position ?: 0L
-                    MediaStateHolder.isPlaying = state?.state == PlaybackState.STATE_PLAYING
-                    MediaStateHolder.lastUpdateEpochMs = System.currentTimeMillis()
-                    MediaStateHolder.fetchLyricsIfNeeded()
-                }
-            } catch (_: SecurityException) {
-                // Notification listener permission not yet enabled by user
-            } catch (_: Exception) {
+            if (!track.isNullOrEmpty()) {
+                MediaStateHolder.title = track
+                MediaStateHolder.artist = artist
+                MediaStateHolder.durationMs = if (length > 0) length else 240000L
+                MediaStateHolder.positionMs = pos
+                MediaStateHolder.isPlaying = playing
+                MediaStateHolder.lastUpdateEpochMs = System.currentTimeMillis()
+                MediaStateHolder.fetchLyricsIfNeeded()
             }
+        }
+    }
+
+    fun pollActiveSessions(context: Context) {
+        if (receiverRegistered) return
+        try {
+            val filter = IntentFilter().apply {
+                addAction("com.android.music.metadatachanged")
+                addAction("com.android.music.playstatechanged")
+                addAction("com.spotify.music.metadatachanged")
+                addAction("com.spotify.music.playbackstatechanged")
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.applicationContext.registerReceiver(mediaReceiver, filter, Context.RECEIVER_EXPORTED)
+            } else {
+                context.applicationContext.registerReceiver(mediaReceiver, filter)
+            }
+            receiverRegistered = true
+        } catch (_: Exception) {
         }
     }
 }
