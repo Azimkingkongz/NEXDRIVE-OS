@@ -51,7 +51,11 @@ Use this method if your car uses a **Factory OEM Screen** with Android Auto, or 
 > **Note:** This method does **not** void your car warranty because the app is installed only on your phone — nothing is installed or modified on your car's head unit.
 
 #### Step 1 — Install the APK on Your Android Phone
-1. Download **`NEXDRIVE-OS-v2.0.apk`** to your Android phone and install it.
+1. Download **`NEXDRIVE-OS-v2.0.apk`** to your Android phone and tap it to install.
+   - **💡 If you see *"App blocked to protect your device"* (Google Play Protect / Samsung Auto Blocker):**
+     - **Standard Android (Play Protect):** Tap **`More details`** on the popup ➔ tap **`Install anyway`** at the bottom (this appears because the APK is self-compiled on GitHub rather than downloaded from the Play Store).
+     - **Samsung Phones (One UI 6+):** If there is no *"More details"* button, open phone **Settings** ➔ **Security and privacy** ➔ **Auto Blocker** ➔ temporarily turn it **Off**, then install the APK.
+     - **Alternative:** Open **Google Play Store** ➔ tap your **Profile icon** (top right) ➔ **Play Protect** ➔ tap the **⚙️ Gear icon** (top right) ➔ temporarily pause **Scan apps with Play Protect** while installing.
 2. Open the **MyCarDeck (NEXDRIVE OS)** app once on your phone:
    - Grant **Location (GPS)** permission when prompted.
    - Grant **Notification Access** permission so the app can read live song titles and synced lyrics from Spotify / YouTube Music.
