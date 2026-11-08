@@ -275,20 +275,12 @@ class MyCarDeckCarScreen(carContext: CarContext) : Screen(carContext) {
         val builder = NavigationTemplate.Builder()
             .setActionStrip(actionStrip)
 
-        // Enable Pan Mode + Surface Touch on Car API Level 2+ (with required PanModeListener!)
+        // Enable Pan Mode + Surface Touch on Car API Level 2+
         try {
             if (carContext.carAppApiLevel >= 2) {
-                builder.setPanModeListener { isInPanMode ->
-                    if (isInPanMode) {
-                        CarToast.makeText(
-                            carContext,
-                            "Touch Mode Aktif: Boleh tekan terus pada skrin",
-                            CarToast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
+                val panAction = Action.Builder(Action.PAN).build()
                 val mapStrip = ActionStrip.Builder()
-                    .addAction(Action.PAN)
+                    .addAction(panAction)
                     .build()
                 builder.setMapActionStrip(mapStrip)
             }
