@@ -118,6 +118,7 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun launchApp(packageName: String, fallbackUrl: String) {
+            // 1. Try exact package name first (e.g. com.spotify.music, com.waze)
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
                 if (launchIntent != null) {
@@ -127,12 +128,48 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (_: Exception) {}
 
+            // 2. Smart Search: Match any installed app by app name or package keyword
+            //    (Handles BitChord variants, Spotify Lite/Mod, YouTube ReVanced, TikTok Asia, etc.)
             try {
-                val uriIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fallbackUrl)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val keyword = when {
+                    packageName.contains("bitchord", true) -> "bitchord"
+                    packageName.contains("spotify", true) -> "spotify"
+                    packageName.contains("waze", true) -> "waze"
+                    packageName.contains("youtube.music", true) -> "youtube music"
+                    packageName.contains("youtube", true) -> "youtube"
+                    packageName.contains("tiktok", true) || packageName.contains("trill", true) -> "tiktok"
+                    packageName.contains("netflix", true) -> "netflix"
+                    packageName.contains("whatsapp", true) -> "whatsapp"
+                    packageName.contains("maps", true) -> "maps"
+                    else -> packageName.substringAfterLast(".")
                 }
-                startActivity(uriIntent)
+
+                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                }
+                val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
+                for (info in resolveInfos) {
+                    val pkg = info.activityInfo.packageName
+                    val label = info.loadLabel(packageManager).toString()
+                    if (label.contains(keyword, ignoreCase = true) || pkg.contains(keyword, ignoreCase = true)) {
+                        val foundIntent = packageManager.getLaunchIntentForPackage(pkg)
+                        if (foundIntent != null) {
+                            foundIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(foundIntent)
+                            return
+                        }
+                    }
+                }
             } catch (_: Exception) {}
+
+            // 3. Fallback if the app is not installed on the device
+            runOnUiThread {
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    "Aplikasi belum di-install dalam peranti ini",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         /**
