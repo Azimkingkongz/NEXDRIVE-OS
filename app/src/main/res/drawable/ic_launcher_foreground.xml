@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer Steering / CarPlay Cockpit Ring -->
+    <path
+        android:strokeWidth="3.2"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.85"
+        android:fillColor="#00000000"
+        android:pathData="M54,28 A26,26 0 1,0 54,80 A26,26 0 1,0 54,28 Z" />
+
+    <!-- Sleek Sportscar Cockpit / Speed Horizon Arc -->
+    <path
+        android:strokeWidth="2.8"
+        android:pathData="M33,63 C40,51 68,51 75,63"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="33"
+                android:startY="57"
+                android:endX="75"
+                android:endY="57"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00C7BE" />
+                <item android:offset="0.5" android:color="#0A84FF" />
+                <item android:offset="1.0" android:color="#5E5CE6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- CarPlay Play / Drive Arrow in Center -->
+    <path
+        android:pathData="M48,43 L66,54 L48,65 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="48"
+                android:startY="43"
+                android:endX="66"
+                android:endY="65"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#30D158" />
+                <item android:offset="0.5" android:color="#0A84FF" />
+                <item android:offset="1.0" android:color="#5E5CE6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Top GPS North Accent Dot -->
+    <path
+        android:pathData="M54,34 A2.8,2.8 0 1,1 54,34.01 Z"
+        android:fillColor="#30D158" />
+
+    <!-- Modern Speed Stream Hash Marks -->
+    <path
+        android:strokeWidth="2.2"
+        android:strokeColor="#5AC8FA"
+        android:strokeLineCap="round"
+        android:pathData="M31,44 L37,47 M77,44 L71,47" />
+
+</vector>
