@@ -46,11 +46,12 @@ class MainActivity : AppCompatActivity() {
             if (title.isNotEmpty()) {
                 val safeTitle = JSONObject.quote(title)
                 val safeArtist = JSONObject.quote(MediaStateHolder.artist)
+                val safeSource = JSONObject.quote(MediaStateHolder.sourceApp)
                 val posMs = (MediaStateHolder.currentEstimatedPositionSec() * 1000).toLong()
                 val durMs = MediaStateHolder.durationMs
                 val playing = MediaStateHolder.isPlaying
                 webView.evaluateJavascript(
-                    "if(window.onAndroidMediaUpdate) window.onAndroidMediaUpdate($safeTitle, $safeArtist, $posMs, $durMs, $playing);",
+                    "if(window.onAndroidMediaUpdate) window.onAndroidMediaUpdate($safeTitle, $safeArtist, $posMs, $durMs, $playing, $safeSource);",
                     null
                 )
             }
@@ -404,7 +405,68 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun startVoiceAssistant() {
+            val intents = listOf(
+                Intent(Intent.ACTION_VOICE_COMMAND).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
+                Intent("android.speech.action.WEB_SEARCH").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
+                Intent(Intent.ACTION_ASSIST).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            )
+            for (intent in intents) {
+                try {
+                    startActivity(intent)
+                    return
+                } catch (_: Exception) {}
+            }
+            launchApp("com.google.android.googlequicksearchbox", "")
+        }
+
+        @JavascriptInterface
+        fun getBatteryInfo(): String {
+            return try {
+                val bi = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val level = bi?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = bi?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+                val status = bi?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+                val charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                val pct = if (level >= 0 && scale > 0) level * 100 / scale else -1
+                JSONObject().put("level", pct).put("charging", charging).toString()
+            } catch (_: Exception) {
+                "{\"level\":-1,\"charging\":false}"
+            }
+        }
+
+        @JavascriptInterface
+        fun sendMediaControl(cmd: String) {
+            try {
+                val audioManager = getSystemService(AUDIO_SERVICE) as? android.media.AudioManager ?: return
+                val keyCode = when (cmd) {
+                    "prev" -> android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS
+                    "next" -> android.view.KeyEvent.KEYCODE_MEDIA_NEXT
+                    else -> android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                }
+                val now = android.os.SystemClock.uptimeMillis()
+                audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(now, now, android.view.KeyEvent.ACTION_DOWN, keyCode, 0))
+                audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(now, now, android.view.KeyEvent.ACTION_UP, keyCode, 0))
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
         fun launchApp(packageName: String, fallbackUrl: String) {
+            if (packageName.contains("spotify", true)) {
+                MediaStateHolder.sourceApp = "spotify"
+            } else if (packageName.contains("bitchord", true)) {
+                MediaStateHolder.sourceApp = "bitchord"
+            }
+            if (packageName == "dialer" || packageName == "com.android.dialer") {
+                try {
+                    startActivity(Intent(Intent.ACTION_DIAL).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                    return
+                } catch (_: Exception) {}
+            }
+
             // 1. Try exact package name first (e.g. com.spotify.music, com.waze, com.netflix.mediaclient)
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
