@@ -3,11 +3,13 @@ package my.cardeck.app.auto
 import android.annotation.SuppressLint
 import android.app.Presentation
 import android.content.Context
+import android.content.Intent
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -180,10 +182,45 @@ class MyCarDeckCarScreen(carContext: CarContext) : Screen(carContext) {
                 settings.textZoom = 100
                 webViewClient = WebViewClient()
                 webChromeClient = WebChromeClient()
+                addJavascriptInterface(CarAndroidBridge(), "AndroidBridge")
                 loadUrl("file:///android_asset/dashboard/index.html")
             }
             webView = wv
             setContentView(wv)
+        }
+    }
+
+    inner class CarAndroidBridge {
+        @JavascriptInterface
+        fun launchApp(packageName: String, fallbackUrl: String) {
+            val pm = carContext.packageManager
+            try {
+                val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    carContext.startActivity(launchIntent)
+                    return
+                }
+            } catch (_: Exception) {}
+
+            try {
+                val keyword = packageName.substringAfterLast(".")
+                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                }
+                for (info in pm.queryIntentActivities(mainIntent, 0)) {
+                    val pkg = info.activityInfo.packageName
+                    val label = info.loadLabel(pm).toString()
+                    if (label.contains(keyword, true) || pkg.contains(keyword, true)) {
+                        val found = pm.getLaunchIntentForPackage(pkg)
+                        if (found != null) {
+                            found.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            carContext.startActivity(found)
+                            return
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 }
