@@ -6,11 +6,15 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Permissions required to render a full-screen custom UI Surface inside Android Auto -->
+    <!-- Required to read MP3/FLAC/WAV folders from USB Pendrive & Head Unit Storage -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- Permissions required to render a full-screen custom UI Surface inside Android Auto / CarLink -->
     <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
     <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
 
-    <!-- Required on Android 11+ (API 30+) so NEXDRIVE OS can see & launch installed apps (Spotify, BitChord, Waze, YouTube, etc.) -->
+    <!-- Required on Android 11+ (API 30+) so NEXDRIVE OS can see & launch installed apps & MCU Radio apps -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -31,9 +35,10 @@
         android:label="NEXDRIVE OS"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
-        <!-- Metadata required for Android Auto projection -->
+        <!-- Metadata required for Android Auto / CarLink projection -->
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
@@ -46,15 +51,18 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode|usb">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
-        <!-- 2. Native Android Auto CarAppService (Renders Full Custom Dashboard Surface in Android Auto) -->
+        <!-- 2. Native Android Auto CarAppService (Renders Interactive Dashboard Surface in CarLink/Android Auto) -->
         <service
             android:name=".auto.MyCarDeckAutoService"
             android:exported="true">
