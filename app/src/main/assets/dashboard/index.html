@@ -3,20 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<title>NEON DRIVE — Tesla Minimal Edition</title>
+<title>Apple CarPlay — Automotive Edition</title>
 <style>
-  :root {
-    --bg-main: #090A0C;
-    --bg-sec: #15171B;
-    --bg-card: #1C1F24;
-    --bg-elevated: #252930;
-    --text-primary: #FFFFFF;
-    --text-secondary: #A5A9B0;
-    --sep-subtle: #343941;
-    --accent-blue: #3E8BFF;
-    --accent-warn: #E6A23C;
-  }
-
   * {
     box-sizing: border-box;
     margin: 0;
@@ -31,799 +19,629 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg-main);
-    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background: #000000;
+    color: #FFFFFF;
     -webkit-font-smoothing: antialiased;
   }
 
   /* =====================================================
-     MAIN SHELL: TOP STATUS BAR + WORKSPACE + SLIM NAV
+     MAIN APPLE CARPLAY SHELL (Wallpaper + Left Dock + Stage)
      ===================================================== */
-  .tesla-shell {
+  .carplay-shell {
     width: 100%;
     height: 100%;
     display: flex;
-    flex-direction: column;
-    background: var(--bg-main);
-    padding: clamp(6px, 1.5vh, 12px) clamp(8px, 1.6vw, 16px);
-    gap: clamp(6px, 1.4vh, 10px);
+    position: relative;
+    overflow: hidden;
+    /* Exact iOS CarPlay Blue-Gold-Teal Abstract Wallpaper (Photo 2) */
+    background:
+      radial-gradient(circle at 88% 85%, #1649B2 0%, transparent 45%),
+      radial-gradient(circle at 62% 58%, #E0A23E 0%, transparent 42%),
+      radial-gradient(circle at 55% 98%, #7C9A3D 0%, transparent 38%),
+      linear-gradient(135deg, #0D5C70 0%, #164E63 35%, #2B394A 70%, #1B3B88 100%);
   }
 
-  .tap-target {
+  .carplay-shell.dark-grid-bg {
+    background: #000000;
+  }
+
+  .tap {
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+    transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.12s ease;
   }
-  .tap-target:active {
-    transform: scale(0.97);
+  .tap:active {
+    transform: scale(0.92);
+    opacity: 0.85;
   }
 
   /* =====================================================
-     1. TOP STATUS BAR (Horizontal, Generous Spacing)
+     1. LEFT APPLE CARPLAY DOCK SIDEBAR
      ===================================================== */
-  .top-status-bar {
-    height: clamp(36px, 8.5vh, 48px);
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 12px;
-    padding: 0 clamp(10px, 1.8vw, 18px);
+  .cp-left-dock {
+    width: clamp(68px, 9.5vw, 86px);
+    height: 100%;
+    background: rgba(20, 28, 36, 0.48);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding: clamp(10px, 2.5vh, 18px) 6px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     flex-shrink: 0;
+    z-index: 10;
   }
 
-  .status-group {
+  .carplay-shell.dark-grid-bg .cp-left-dock {
+    background: #1C1C1E;
+  }
+
+  .dock-top-info {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: clamp(10px, 1.8vw, 20px);
-    min-width: 0;
+    gap: 3px;
   }
 
-  .clock-cluster {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-
-  .top-clock {
-    font-size: clamp(1.05rem, 3.2vh, 1.35rem);
+  .dock-clock {
+    font-size: clamp(0.95rem, 3.1vh, 1.2rem);
     font-weight: 700;
-    letter-spacing: -0.3px;
-    color: var(--text-primary);
+    letter-spacing: -0.4px;
+    color: #FFFFFF;
     font-variant-numeric: tabular-nums;
   }
 
-  .top-date {
-    font-size: clamp(0.65rem, 1.9vh, 0.8rem);
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    white-space: nowrap;
-  }
-
-  .v-divider {
-    width: 1px;
-    height: 16px;
-    background: var(--sep-subtle);
-    flex-shrink: 0;
-  }
-
-  .weather-cluster {
+  .dock-5g-row {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-primary);
-    font-size: clamp(0.72rem, 2.1vh, 0.88rem);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .weather-cluster svg {
-    width: clamp(14px, 2.6vh, 18px);
-    height: clamp(14px, 2.6vh, 18px);
-    color: var(--text-secondary);
-    flex-shrink: 0;
-  }
-
-  .location-cluster {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--text-secondary);
-    font-size: clamp(0.68rem, 1.9vh, 0.82rem);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 190px;
-  }
-
-  .location-cluster svg {
-    width: 13px;
-    height: 13px;
-    color: var(--accent-blue);
-    flex-shrink: 0;
-  }
-
-  /* Center / Right Telemetry: Speed + Connectivity */
-  .speed-pill {
-    display: flex;
-    align-items: baseline;
-    gap: 5px;
-    background: var(--bg-card);
-    border: 1px solid var(--sep-subtle);
-    padding: 3px 12px;
-    border-radius: 8px;
-  }
-
-  .speed-num {
-    font-size: clamp(0.95rem, 3vh, 1.25rem);
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .speed-unit {
-    font-size: clamp(0.58rem, 1.6vh, 0.7rem);
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.5px;
-  }
-
-  .conn-icons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-secondary);
-  }
-
-  .conn-badge {
-    display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 4px;
-    font-size: clamp(0.6rem, 1.6vh, 0.72rem);
-    font-weight: 600;
-    color: var(--text-secondary);
   }
 
-  .conn-badge svg {
-    width: 14px;
-    height: 14px;
-    color: var(--accent-blue);
-  }
-
-  /* =====================================================
-     2. MAIN WORKSPACE AREA (Stages)
-     ===================================================== */
-  .workspace-area {
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
+  .sig-bars {
     display: flex;
-  }
-
-  .stage-view {
-    display: none;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    min-width: 0;
-  }
-
-  .stage-view.active {
-    display: flex;
-  }
-
-  /* =====================================================
-     STAGE 1: HOME DASHBOARD (Left Media Card + Right Column)
-     ===================================================== */
-  #stageHome {
-    gap: clamp(8px, 1.4vw, 14px);
-  }
-
-  .card-surface {
-    background: var(--bg-card);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 14px;
-  }
-
-  /* LEFT PANEL: MAIN MEDIA CARD */
-  .main-media-card {
-    flex: 1.08;
-    min-width: 0;
-    min-height: 0;
-    position: relative;
-    overflow: hidden;
-    padding: clamp(10px, 2.5vh, 18px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: clamp(6px, 1.5vh, 12px);
-  }
-
-  /* Subtle low-opacity background artwork pattern */
-  .media-bg-art {
-    position: absolute;
-    right: -30px;
-    top: -30px;
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(62, 139, 255, 0.06) 0%, rgba(28, 31, 36, 0) 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .media-content-layer {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    gap: clamp(6px, 1.5vh, 12px);
-  }
-
-  .media-top-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .source-Indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 9px;
-    border-radius: 6px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    font-size: clamp(0.58rem, 1.6vh, 0.7rem);
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-  }
-
-  .source-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent-blue);
-  }
-
-  .lyrics-shortcut-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 8px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    color: var(--text-primary);
-    font-size: clamp(0.6rem, 1.7vh, 0.74rem);
-    font-weight: 600;
-  }
-
-  .lyrics-shortcut-btn svg {
-    width: 13px;
-    height: 13px;
-    color: var(--accent-blue);
-  }
-
-  /* Artwork + Metadata Row */
-  .media-hero-row {
-    display: flex;
-    align-items: center;
-    gap: clamp(10px, 1.8vw, 16px);
-    min-width: 0;
-  }
-
-  .media-art-box {
-    width: clamp(50px, 13vh, 72px);
-    height: clamp(50px, 13vh, 72px);
-    border-radius: 12px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: var(--accent-blue);
-  }
-
-  .media-art-box svg {
-    width: 48%;
-    height: 48%;
-  }
-
-  .media-meta-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+    align-items: flex-end;
     gap: 2px;
+    height: 11px;
+  }
+  .sig-bars span {
+    width: 2.5px;
+    background: #FFFFFF;
+    border-radius: 1px;
   }
 
-  .media-freq-badge {
-    font-size: clamp(0.68rem, 1.9vh, 0.82rem);
-    font-weight: 600;
-    color: var(--accent-blue);
-    letter-spacing: 0.2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .media-song-title {
-    font-size: clamp(0.95rem, 3.3vh, 1.3rem);
+  .sig-txt {
+    font-size: clamp(0.65rem, 2vh, 0.82rem);
     font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1;
+    color: #FFFFFF;
   }
 
-  .media-song-artist {
-    font-size: clamp(0.68rem, 2vh, 0.84rem);
-    font-weight: 500;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Minimal Lyric Bar inside Media Card */
-  .media-lyric-strip {
-    padding: clamp(5px, 1.4vh, 8px) 10px;
-    border-radius: 8px;
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
+  /* Battery row under 5G */
+  .dock-batt-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .media-lyric-text {
-    font-size: clamp(0.65rem, 1.9vh, 0.8rem);
-    font-weight: 500;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-  }
-
-  /* Progress Bar */
-  .media-progress-area {
-    display: flex;
-    flex-direction: column;
     gap: 4px;
-    cursor: pointer;
+    margin-top: 2px;
   }
-
-  .progress-rail {
-    width: 100%;
+  .batt-shell {
+    position: relative;
+    width: 22px;
+    height: 11px;
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 3px;
+    padding: 1px;
+  }
+  .batt-shell::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 3px;
+    width: 2px;
     height: 4px;
-    background: var(--bg-elevated);
-    border-radius: 99px;
-    overflow: hidden;
+    border-radius: 0 1px 1px 0;
+    background: rgba(255, 255, 255, 0.85);
   }
-
-  .progress-fill {
-    width: 35%;
+  .batt-fill {
     height: 100%;
-    background: var(--accent-blue);
-    border-radius: 99px;
-    transition: width 0.2s ease;
+    width: 80%;
+    border-radius: 1px;
+    background: #FFFFFF;
+    transition: width 0.4s ease;
   }
-
-  .progress-timestamps {
-    display: flex;
-    justify-content: space-between;
-    font-size: clamp(0.58rem, 1.6vh, 0.7rem);
-    font-weight: 500;
-    color: var(--text-secondary);
+  .batt-txt {
+    font-size: clamp(0.6rem, 1.9vh, 0.76rem);
+    font-weight: 700;
+    line-height: 1;
+    color: #FFFFFF;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Transport Controls */
-  .media-transport-row {
-    display: grid;
-    grid-template-columns: 1fr 1.25fr 1fr;
-    gap: 8px;
+  /* 3 Recent Dock App Squircles */
+  .dock-apps-col {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 2vh, 14px);
+    align-items: center;
   }
 
-  .ctrl-btn {
-    height: clamp(36px, 9.8vh, 48px);
-    border-radius: 10px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    color: var(--text-primary);
+  .dock-squircle {
+    width: clamp(40px, 10.5vh, 52px);
+    height: clamp(40px, 10.5vh, 52px);
+    border-radius: 22.5%;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.38);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    font-size: clamp(0.68rem, 1.9vh, 0.82rem);
-    font-weight: 600;
+  }
+  .dock-squircle svg {
+    width: 100%;
+    height: 100%;
   }
 
-  .ctrl-btn svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
-  }
-
-  .ctrl-btn.primary-active {
-    background: var(--accent-blue);
-    border-color: var(--accent-blue);
+  /* Bottom Toggle Button (8-dot grid vs Split icon) */
+  .dock-bottom-btn {
+    width: clamp(40px, 10vh, 50px);
+    height: clamp(28px, 7vh, 36px);
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #FFFFFF;
   }
 
   /* =====================================================
-     RIGHT COLUMN: 2x2 QUICK APP LAUNCHER + FM RADIO PANEL
+     2. MAIN CARPLAY STAGE AREA
      ===================================================== */
-  .right-column {
+  .cp-main-stage {
     flex: 1;
     min-width: 0;
-    min-height: 0;
+    height: 100%;
+    padding: clamp(8px, 2.2vh, 16px) clamp(10px, 2vw, 18px);
     display: flex;
-    flex-direction: column;
-    gap: clamp(8px, 1.4vh, 12px);
+    position: relative;
+    z-index: 5;
   }
 
-  /* Quick App Launcher Section */
-  .launcher-panel {
-    flex: 1.05;
+  .cp-page {
+    display: none;
+    width: 100%;
+    height: 100%;
     min-height: 0;
-    padding: clamp(8px, 1.8vh, 14px);
+  }
+  .cp-page.active {
     display: flex;
-    flex-direction: column;
-    gap: clamp(6px, 1.2vh, 10px);
   }
 
-  .section-header {
+  /* =====================================================
+     PAGE 0 (DEFAULT): SPLIT-SCREEN DASHBOARD (Photo 2)
+     ===================================================== */
+  #pageSplit {
+    gap: clamp(10px, 1.6vw, 16px);
+  }
+
+  /* Left Map Card */
+  .cp-map-card {
+    flex: 1.08;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    background: #24262B;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+  }
+
+  .map-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Right Column (Top Destination Card + Bottom Now Playing Card) */
+  .cp-right-col {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.8vh, 14px);
+    min-width: 0;
+  }
+
+  .frosted-glass {
+    background: rgba(40, 44, 55, 0.68);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  }
+
+  /* Top-Right Apple Siri / Google Voice Command Card */
+  .cp-dest-card {
+    height: clamp(72px, 23vh, 112px);
+    padding: clamp(10px, 2vh, 16px) clamp(12px, 2vw, 20px);
     display: flex;
     align-items: center;
+    gap: clamp(10px, 1.6vw, 16px);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .siri-orb {
+    width: clamp(40px, 10.5vh, 54px);
+    height: clamp(40px, 10.5vh, 54px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 28%, #5EEAD4 0%, #3B82F6 35%, #A855F7 68%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.55), inset 0 0 10px rgba(255, 255, 255, 0.45);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .cp-dest-card.listening .siri-orb {
+    transform: scale(1.08);
+    box-shadow: 0 0 26px rgba(236, 72, 153, 0.85), 0 0 14px rgba(94, 234, 212, 0.7);
+  }
+
+  .siri-wave {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .siri-wave span {
+    width: 3.5px;
+    border-radius: 99px;
+    animation: siriIdle 1.4s ease-in-out infinite alternate;
+  }
+  .siri-wave span:nth-child(1) { height: 10px; background: #38BDF8; animation-delay: 0.0s; }
+  .siri-wave span:nth-child(2) { height: 20px; background: #818CF8; animation-delay: 0.2s; }
+  .siri-wave span:nth-child(3) { height: 26px; background: #EC4899; animation-delay: 0.4s; }
+  .siri-wave span:nth-child(4) { height: 18px; background: #A855F7; animation-delay: 0.15s; }
+  .siri-wave span:nth-child(5) { height: 11px; background: #2DD4BF; animation-delay: 0.35s; }
+
+  @keyframes siriIdle {
+    0% { transform: scaleY(0.45); opacity: 0.7; }
+    100% { transform: scaleY(1.05); opacity: 1; }
+  }
+
+  .dest-meta {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .dest-title {
+    font-size: clamp(1rem, 3.6vh, 1.4rem);
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dest-sub {
+    font-size: clamp(0.7rem, 2.2vh, 0.92rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.78);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Bottom-Right Now Playing Card (Centered Artwork + Title + 3 White Icons) */
+  .gmaps-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 6px 8px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #202124;
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  }
+
+  .src-badge {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+  .src-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0A84FF;
+  }
+  #musicCard { position: relative; transition: background 0.4s ease; }
+  #musicCard.src-spotify { background: linear-gradient(160deg, rgba(30, 215, 96, 0.30), rgba(18, 18, 18, 0.78)); }
+  #musicCard.src-bitchord { background: linear-gradient(160deg, rgba(255, 149, 0, 0.32), rgba(28, 20, 40, 0.80)); }
+  #musicCard.src-fm { background: linear-gradient(160deg, rgba(10, 132, 255, 0.28), rgba(20, 24, 36, 0.80)); }
+
+  .cp-music-card {
+    flex: 1;
+    min-height: 0;
+    padding: clamp(10px, 2.4vh, 18px) clamp(14px, 2.4vw, 24px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    text-align: center;
+  }
+
+  .album-art-square {
+    width: clamp(52px, 16vh, 84px);
+    height: clamp(52px, 16vh, 84px);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.48);
+    background: linear-gradient(145deg, #0A4D68, #088395, #F59E0B);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     flex-shrink: 0;
   }
 
-  .section-label {
-    font-size: clamp(0.6rem, 1.7vh, 0.72rem);
-    font-weight: 600;
-    color: var(--text-secondary);
+  .np-title {
+    font-size: clamp(0.95rem, 3.2vh, 1.25rem);
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.2px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .np-artist {
+    font-size: clamp(0.74rem, 2.3vh, 0.95rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.76);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .np-prog-wrap {
+    width: 100%;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+
+  .np-prog-rail {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .np-prog-fill {
+    width: 56%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 99px;
+  }
+
+  .np-controls {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 10px;
+  }
+
+  .np-icon-btn {
+    background: none;
+    border: none;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  /* =====================================================
+     PAGE 1: EXACT 5x2 APPLE CARPLAY ICON GRID (Photo 1)
+     ===================================================== */
+  #pageGrid {
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(6px, 2vh, 16px) clamp(8px, 2vw, 24px) 2px;
+  }
+
+  .carplay-5x2-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    align-items: center;
+    justify-items: center;
+    row-gap: clamp(6px, 1.8vh, 16px);
+    column-gap: clamp(8px, 2vw, 22px);
+  }
+
+  .cp-icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, 1.1vh, 7px);
+    background: none;
+    border: none;
+    color: #FFFFFF;
+  }
+
+  .cp-squircle {
+    width: clamp(54px, 18vh, 88px);
+    height: clamp(54px, 18vh, 88px);
+    border-radius: 22.5%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  }
+
+  .cp-squircle svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .cp-icon-label {
+    font-size: clamp(0.68rem, 2.2vh, 0.9rem);
+    font-weight: 500;
+    color: #FFFFFF;
+    white-space: nowrap;
+  }
+
+  .cal-squircle {
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 3px;
+  }
+  .cal-day {
+    font-size: clamp(0.55rem, 1.9vh, 0.75rem);
+    font-weight: 800;
+    color: #FF3B30;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    line-height: 1;
+  }
+  .cal-num {
+    font-size: clamp(1.5rem, 6.2vh, 2.6rem);
+    font-weight: 300;
+    color: #000000;
+    line-height: 1.05;
+    letter-spacing: -1px;
   }
 
-  .subtle-action-btn {
-    padding: 3px 8px;
-    border-radius: 6px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    color: var(--text-secondary);
-    font-size: clamp(0.56rem, 1.6vh, 0.68rem);
-    font-weight: 600;
+  .dots-row {
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .page-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    border: none;
+  }
+  .page-dot.active {
+    background: #FFFFFF;
   }
 
-  .app-grid-2x2 {
+  /* =====================================================
+     PAGE 2: USB PENDRIVE & FM RADIO STUDIO + EXTRA APPS
+     ===================================================== */
+  #pageStudio {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .studio-grid {
     flex: 1;
     min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: clamp(6px, 1.2vh, 10px);
-  }
-
-  .tesla-app-card {
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 10px;
-    padding: clamp(6px, 1.4vh, 12px) clamp(8px, 1.2vw, 12px);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-    color: var(--text-primary);
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .tesla-app-card:hover {
-    border-color: var(--accent-blue);
-  }
-
-  .app-icon-holder {
-    width: clamp(30px, 7.8vh, 40px);
-    height: clamp(30px, 7.8vh, 40px);
-    border-radius: 9px;
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: var(--text-primary);
-  }
-
-  .app-icon-holder svg {
-    width: 56%;
-    height: 56%;
-  }
-
-  .app-title-txt {
-    font-size: clamp(0.74rem, 2.3vh, 0.92rem);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .app-sub-txt {
-    font-size: clamp(0.56rem, 1.6vh, 0.68rem);
-    font-weight: 500;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 1px;
-  }
-
-  /* FM Radio Control Panel */
-  .fm-radio-panel {
-    flex: 0.95;
-    min-height: 0;
-    padding: clamp(8px, 1.8vh, 14px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 6px;
-  }
-
-  .fm-header-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* Minimal Audio Visualizer */
-  @keyframes minEq1 { 0%, 100% { height: 3px; } 50% { height: 11px; } }
-  @keyframes minEq2 { 0%, 100% { height: 10px; } 40% { height: 4px; } 80% { height: 12px; } }
-  @keyframes minEq3 { 0%, 100% { height: 5px; } 35% { height: 12px; } 70% { height: 6px; } }
-  .minimal-visualizer {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 12px;
-    padding: 0 4px;
-  }
-  .vis-bar {
-    width: 2.5px;
-    border-radius: 2px;
-    background: var(--accent-blue);
-  }
-  .playing-eq .v1 { animation: minEq1 0.75s infinite ease-in-out; }
-  .playing-eq .v2 { animation: minEq2 0.55s infinite ease-in-out; }
-  .playing-eq .v3 { animation: minEq3 0.65s infinite ease-in-out; }
-  .playing-eq .v4 { animation: minEq2 0.85s infinite ease-in-out; }
-  .paused-eq .vis-bar { height: 3px !important; animation: none !important; opacity: 0.4; }
-
-  .fm-tuner-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 9px;
-    padding: 4px 8px;
-  }
-
-  .fm-adj-btn {
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    color: var(--text-primary);
-    font-size: clamp(0.6rem, 1.8vh, 0.74rem);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .fm-freq-center {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
-
-  .fm-freq-readout {
-    font-size: clamp(0.88rem, 2.8vh, 1.12rem);
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .fm-status-tag {
-    font-size: clamp(0.52rem, 1.5vh, 0.64rem);
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-  }
-
-  .fm-presets-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-  }
-
-  .preset-pill {
-    padding: clamp(4px, 1.1vh, 7px) 4px;
-    border-radius: 8px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--sep-subtle);
-    color: var(--text-primary);
-    text-align: center;
-  }
-
-  .preset-pill.active {
-    background: rgba(62, 139, 255, 0.14);
-    border-color: var(--accent-blue);
-  }
-
-  .preset-pill.saving {
-    background: rgba(230, 162, 60, 0.16);
-    border-color: var(--accent-warn);
-  }
-
-  .preset-freq {
-    font-size: clamp(0.65rem, 1.9vh, 0.8rem);
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .preset-name {
-    font-size: clamp(0.5rem, 1.4vh, 0.6rem);
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-top: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .preset-pill.active .preset-name {
-    color: var(--accent-blue);
-  }
-
-  /* =====================================================
-     3. SLIM BOTTOM NAVIGATION BAR (5 Monochromatic Tabs)
-     ===================================================== */
-  .slim-nav-bar {
-    height: clamp(38px, 9vh, 50px);
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 12px;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    padding: 3px;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  .nav-tab {
-    border: none;
-    background: transparent;
-    border-radius: 9px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    font-size: clamp(0.64rem, 1.8vh, 0.78rem);
-    font-weight: 600;
-  }
-
-  .nav-tab svg {
-    width: clamp(15px, 2.8vh, 18px);
-    height: clamp(15px, 2.8vh, 18px);
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .nav-tab.active {
-    background: var(--bg-elevated);
-    color: var(--accent-blue);
-  }
-
-  /* =====================================================
-     STAGE 2: USB MEDIA EXPLORER
-     ===================================================== */
-  #stageUsb {
-    flex-direction: column;
-    padding: 12px;
     gap: 10px;
   }
 
-  .usb-split-grid {
+  .studio-box {
+    background: rgba(28, 28, 30, 0.85);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .cp-scroll {
     flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 5fr 7fr;
-    gap: 10px;
-  }
-
-  .clean-scroll {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding-right: 4px;
+    gap: 5px;
   }
 
-  .list-row-item {
+  .cp-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    gap: 8px;
+    padding: 7px 10px;
     border-radius: 10px;
-    background: var(--bg-sec);
-    border: 1px solid var(--sep-subtle);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
   }
-
-  .list-row-item.active {
-    background: rgba(62, 139, 255, 0.12);
-    border-color: var(--accent-blue);
+  .cp-row.active {
+    background: rgba(10, 132, 255, 0.25);
+    border-color: #0A84FF;
   }
 
-  /* =====================================================
-     STAGE 3: LYRICS STAGE
-     ===================================================== */
-  #stageLyrics {
-    padding: 14px;
-    gap: 16px;
-    align-items: center;
+  .pill-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #FFFFFF;
+    font-size: clamp(0.62rem, 1.8vh, 0.76rem);
+    font-weight: 600;
+  }
+  .pill-btn.active {
+    background: #0A84FF;
+    border-color: #0A84FF;
   }
 
-  /* =====================================================
-     MODALS (Customize Apps & System Settings)
-     ===================================================== */
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(9, 10, 12, 0.82);
-    backdrop-filter: blur(8px);
+  #toastMsg {
     display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 14px;
-  }
-
-  .modal-backdrop.open {
-    display: flex;
-  }
-
-  .modal-box {
-    background: var(--bg-card);
-    border: 1px solid var(--sep-subtle);
-    border-radius: 14px;
-    padding: 16px;
-    width: 100%;
-    max-width: 440px;
+    position: fixed;
+    bottom: 20px;
+    left: 54%;
+    transform: translateX(-50%);
+    z-index: 200;
+    padding: 6px 16px;
+    border-radius: 99px;
+    background: rgba(28, 28, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #FFFFFF;
   }
 </style>
 </head>
@@ -832,345 +650,472 @@
 <input type="file" id="usbFileInput" webkitdirectory directory multiple accept="audio/*" style="display:none;" onchange="loadRealFiles(event)" />
 <audio id="realAudio" style="display:none;"></audio>
 
-<div class="tesla-shell">
+<div id="cpShell" class="carplay-shell">
 
-  <!-- 1. TOP STATUS BAR -->
-  <header class="top-status-bar">
-    <!-- Left: Clock, Date, Weather, Location -->
-    <div class="status-group">
-      <div class="clock-cluster">
-        <span id="bigClock" class="top-clock">10:45</span>
-        <span id="bigDate" class="top-date">SUN, 8 NOV</span>
+  <!-- 1. LEFT APPLE CARPLAY SIDEBAR (9:41 + 5G + Maps/Music/Phone + 8-Dot Toggle) -->
+  <aside class="cp-left-dock">
+    <div class="dock-top-info">
+      <div id="bigClock" class="dock-clock">9:41</div>
+      <div class="dock-5g-row">
+        <div class="sig-bars">
+          <span style="height:3px;"></span>
+          <span style="height:5px;"></span>
+          <span style="height:8px;"></span>
+          <span style="height:11px;"></span>
+        </div>
+        <span class="sig-txt">5G</span>
       </div>
-
-      <div class="v-divider"></div>
-
-      <div onclick="detectGpsLocation(true)" class="weather-cluster tap-target">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-        </svg>
-        <span id="tempVal">28°C</span>
-      </div>
-
-      <div class="v-divider"></div>
-
-      <div onclick="detectGpsLocation(true)" class="location-cluster tap-target">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 21s-6-5.25-6-10a6 6 0 0 1 12 0c0 4.75-6 10-6 10Z"/>
-          <circle cx="12" cy="11" r="2"/>
-        </svg>
-        <span id="locVal">Kuala Lumpur</span>
+      <div class="dock-batt-row">
+        <div class="batt-shell"><div id="battFill" class="batt-fill"></div></div>
+        <span id="battTxt" class="batt-txt">--%</span>
       </div>
     </div>
 
-    <!-- Right: Vehicle Speed in KM/H + Wi-Fi & Bluetooth Status -->
-    <div class="status-group">
-      <div onclick="simSpeed()" class="speed-pill tap-target" title="Tap to test speed">
-        <span id="speedVal" class="speed-num">0</span>
-        <span class="speed-unit">KM/H</span>
+    <div class="dock-apps-col">
+      <!-- Dock 1: Maps / Waze -->
+      <div onclick="handleAppClick('waze','Waze')" class="dock-squircle tap" title="Maps / Waze">
+        <svg viewBox="0 0 100 100">
+          <rect width="100" height="100" fill="#E8F6E3"/>
+          <polygon points="0,0 45,0 30,100 0,100" fill="#BCE4C5"/>
+          <polygon points="45,0 100,0 100,55 35,55" fill="#78C679"/>
+          <path d="M0 56 L100 42" stroke="#FFFFFF" stroke-width="12"/>
+          <path d="M48 0 L68 100" stroke="#FDB863" stroke-width="15"/>
+          <path d="M26 0 L44 100" stroke="#FF5A79" stroke-width="11"/>
+          <circle cx="46" cy="56" r="22" fill="#007AFF" stroke="#FFFFFF" stroke-width="4.5"/>
+          <polygon points="46,41 56,65 46,59 36,65" fill="#FFFFFF"/>
+        </svg>
       </div>
 
-      <div class="v-divider"></div>
+      <!-- Dock 2: Apple Music / USB & FM Studio -->
+      <div onclick="switchPage(2)" class="dock-squircle tap" title="Music & FM Radio">
+        <svg viewBox="0 0 100 100">
+          <rect width="100" height="100" fill="#FA2D48"/>
+          <path d="M70 22 L38 29 L38 68 C38 74 33 78 27 78 C21 78 17 74 17 68 C17 62 21 58 27 58 C30 58 32 59 33 60 L33 23 L75 14 L75 61 C75 67 70 71 64 71 C58 71 54 67 54 61 C54 55 58 51 64 51 C67 51 69 52 70 53 Z" fill="#FFFFFF"/>
+        </svg>
+      </div>
 
-      <div class="conn-icons">
-        <div class="conn-badge" title="Wi-Fi Connected">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <circle cx="12" cy="20" r="1" fill="currentColor"/>
-          </svg>
-          <span>Wi-Fi</span>
-        </div>
-        <div class="conn-badge" title="Bluetooth Active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m6.5 6.5 11 11L12 23V1l5.5 5.5-11 11"/>
-          </svg>
-          <span>BT</span>
-        </div>
+      <!-- Dock 3: Phone -->
+      <div onclick="handleAppClick('phone','Phone')" class="dock-squircle tap" title="Phone">
+        <svg viewBox="0 0 100 100">
+          <rect width="100" height="100" fill="#30D158"/>
+          <path d="M30 23 C24 23 21 28 21 34 C21 58 42 79 66 79 C72 79 77 76 77 70 L77 60 C77 56 74 54 70 53 L59 51 C56 51 54 52 52 54 L47 59 C40 55 34 49 30 42 L35 37 C37 35 38 33 38 30 L36 19 C35 16 32 23 30 23 Z" fill="#FFFFFF"/>
+        </svg>
       </div>
     </div>
-  </header>
 
-  <!-- 2. MAIN WORKSPACE -->
-  <main class="workspace-area">
+    <!-- Bottom Toggle Icon: 8-Dot Grid (::::) on Split Screen, Split Icon ([■≡]) on App Grid -->
+    <button onclick="toggleMainView()" id="dockBottomBtn" class="dock-bottom-btn tap" title="Toggle CarPlay Grid / Dashboard">
+      <svg width="38" height="22" viewBox="0 0 38 22" fill="none">
+        <rect x="1" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="11" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="21" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="31" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="1" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="11" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="21" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="31" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+      </svg>
+    </button>
+  </aside>
 
-    <!-- STAGE 1: HOME DASHBOARD -->
-    <section id="stageHome" class="stage-view active">
+  <!-- 2. MAIN CARPLAY STAGE -->
+  <main class="cp-main-stage">
 
-      <!-- LEFT: MAIN MEDIA CARD -->
-      <div class="card-surface main-media-card">
-        <div class="media-bg-art"></div>
+    <!-- =====================================================
+         PAGE 0 (DEFAULT): SPLIT-SCREEN DASHBOARD (Photo 2)
+         ===================================================== -->
+    <section id="pageSplit" class="cp-page active">
 
-        <div class="media-content-layer">
-          <!-- Header: Stereo / FM Indicator + Lyrics Shortcut -->
-          <div class="media-top-header">
-            <div class="source-Indicator">
-              <span class="source-dot"></span>
-              <span id="stereoIndicator">STEREO · FM / USB</span>
-            </div>
-            <button onclick="switchStage('lyrics')" class="lyrics-shortcut-btn tap-target">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="22"/>
-              </svg>
-              <span>Lyrics</span>
-            </button>
-          </div>
+      <!-- Left: Google Maps Card (tap to open Google Maps) -->
+      <div onclick="handleAppClick('maps','Google Maps')" class="cp-map-card tap" title="Tap to open Google Maps">
+        <svg class="map-svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+          <rect width="400" height="400" fill="#23262B"/>
+          <path d="M0 70 L400 70" stroke="#363940" stroke-width="10"/>
+          <path d="M85 0 L65 400" stroke="#3A3D45" stroke-width="16"/>
+          <path d="M0 190 L220 400" stroke="#363940" stroke-width="12"/>
+          <!-- Apple Park Ring -->
+          <circle cx="255" cy="185" r="82" fill="none" stroke="#32353B" stroke-width="26"/>
+          <circle cx="255" cy="185" r="32" fill="#2B2E34"/>
+          <path d="M80 280 Q150 260 220 380" fill="none" stroke="#52565E" stroke-width="4"/>
+          <path d="M55 240 L120 390" fill="none" stroke="#52565E" stroke-width="4"/>
+          <!-- Street Labels -->
+          <text x="8" y="64" fill="#D1D5DB" font-size="15" font-weight="600" font-family="sans-serif">Jalan Utama</text>
+          <text x="330" y="54" fill="#D1D5DB" font-size="14" font-weight="600" font-family="sans-serif">E1</text>
+          <text x="200" y="345" fill="#D1D5DB" font-size="13" font-weight="600" font-family="sans-serif" transform="rotate(42 200 345)">Lebuhraya</text>
 
-          <!-- Artwork + Frequency + Song Title -->
-          <div class="media-hero-row">
-            <div onclick="switchStage('usb')" class="media-art-box tap-target" title="Browse USB Media">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </div>
-            <div class="media-meta-col">
-              <div id="folderTag" onclick="switchStage('usb')" class="media-freq-badge tap-target">92.3 MHz · Folder: 01_Malay_Rock_Kapak</div>
-              <div id="trackTitle" class="media-song-title">Isabella (Remastered)</div>
-              <div id="trackArtist" class="media-song-artist">Search · 320kbps Stereo</div>
-            </div>
-          </div>
+          <!-- Blue Route Line -->
+          <path d="M72 202 L120 218 L175 268 L224 275 L245 242 L276 244 L298 258 L302 225" fill="none" stroke="#3898FF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
 
-          <!-- Subtle Lyric Line Preview -->
-          <div onclick="switchStage('lyrics')" class="media-lyric-strip tap-target">
-            <span id="liveLyricLine" class="media-lyric-text">"Isabella adalah kisah cinta dua dunia..."</span>
-            <span style="font-size:0.6rem; font-weight:600; color:var(--accent-blue); flex-shrink:0;">VIEW</span>
-          </div>
+          <!-- Current Location Blue Circle -->
+          <circle cx="72" cy="202" r="18" fill="#0A84FF" stroke="#FFFFFF" stroke-width="5"/>
 
-          <!-- Playback Progress Bar -->
-          <div onclick="seekAudioBar(event)" class="media-progress-area">
-            <div class="progress-rail">
-              <div id="progFill" class="progress-fill"></div>
-            </div>
-            <div class="progress-timestamps">
-              <span id="curTime">01:18</span>
-              <span id="totTime">04:12</span>
-            </div>
-          </div>
-
-          <!-- Previous, Play/Pause, Next Controls -->
-          <div class="media-transport-row">
-            <button onclick="prevTrack()" class="ctrl-btn tap-target">
-              <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-              <span>Prev</span>
-            </button>
-            <button onclick="togglePlay()" id="playBtnMain" class="ctrl-btn primary-active tap-target">
-              <span id="playIconMain" style="font-size:0.85rem;">⏸</span>
-              <span id="playTextMain">Pause</span>
-            </button>
-            <button onclick="nextTrack()" class="ctrl-btn tap-target">
-              <span>Next</span>
-              <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-          </div>
+          <!-- Destination Orange-Red Pin -->
+          <circle cx="305" cy="192" r="22" fill="#F05A3E"/>
+          <circle cx="305" cy="185" r="4.5" fill="#FFFFFF"/>
+          <line x1="305" y1="189" x2="305" y2="202" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+          <text id="mapPinLabel1" x="305" y="236" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle" font-family="sans-serif">Lokasi</text>
+          <text id="mapPinLabel2" x="305" y="254" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle" font-family="sans-serif">Anda</text>
+        </svg>
+        <!-- Google Maps badge -->
+        <div class="gmaps-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" fill="#EA4335"/>
+            <path d="M12 2C8.1 2 5 5.1 5 9c0 1.6.5 3.2 1.3 4.6L12 2z" fill="#4285F4"/>
+            <path d="M5 9c0 1.6.5 3.2 1.3 4.6l4.4-4.4L5 9z" fill="#FBBC04"/>
+            <circle cx="12" cy="9" r="2.6" fill="#FFFFFF"/>
+          </svg>
+          <span>Google Maps</span>
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: 2x2 QUICK APP LAUNCHER + FM RADIO CONTROL PANEL -->
-      <div class="right-column">
+      <!-- Right Column: Top Location Card + Bottom Music Card -->
+      <div class="cp-right-col">
 
-        <!-- QUICK APP LAUNCHER (2x2 Grid) -->
-        <div class="card-surface launcher-panel">
-          <div class="section-header">
-            <span class="section-label">Quick App Launcher</span>
-            <button onclick="openCustomize()" class="subtle-action-btn tap-target">Edit Apps</button>
+        <!-- Top-Right Frosted Apple Siri / Google Voice Command Card -->
+        <div id="voiceCard" onclick="triggerVoiceAssistant()" class="frosted-glass cp-dest-card tap" title="Tap to speak (Waze, YouTube, Assistant)">
+          <div class="siri-orb">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="9" y="3" width="6" height="11" rx="3" fill="#FFFFFF"/>
+              <path d="M5 11 C5 14.866 8.134 18 12 18 C15.866 18 19 14.866 19 11" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="12" y1="18" x2="12" y2="21.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
           </div>
-          <div id="appGrid" class="app-grid-2x2"></div>
+          <div class="dest-meta">
+            <div id="locVal" class="dest-title">Voice Command</div>
+            <div id="subTelemetry" class="dest-sub">Tap to speak</div>
+          </div>
+          <div class="siri-wave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
         </div>
 
-        <!-- FM RADIO CONTROL PANEL -->
-        <div class="card-surface fm-radio-panel">
-          <div class="section-header">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="section-label">FM Radio Control</span>
-              <div id="eqContainer" class="minimal-visualizer playing-eq">
-                <div class="vis-bar v1" style="height:5px;"></div>
-                <div class="vis-bar v2" style="height:10px;"></div>
-                <div class="vis-bar v3" style="height:7px;"></div>
-                <div class="vis-bar v4" style="height:11px;"></div>
+        <!-- Bottom-Right Frosted Now Playing Card (auto-switches: Spotify / BitChord / USB / FM) -->
+        <div id="musicCard" class="frosted-glass cp-music-card">
+          <div id="srcBadge" onclick="openCurrentSourceApp()" class="src-badge tap">
+            <span id="srcDot" class="src-dot"></span>
+            <span id="srcName">USB Music</span>
+          </div>
+          <div id="albumArt" onclick="openCurrentSourceApp()" class="album-art-square tap" title="Tap to open player">
+            <div id="artTopTxt" style="font-size:11px; font-weight:900; color:#38BDF8; letter-spacing:0.5px;">LUKE</div>
+            <div id="artBotTxt" style="font-size:11px; font-weight:900; color:#FBBF24; letter-spacing:0.5px;">COMBS</div>
+            <div id="artHint" style="font-size:8px; color:#FFF; margin-top:4px; opacity:0.85;">TAP FOR USB / FM</div>
+          </div>
+
+          <div style="width:100%;">
+            <div id="trackTitle" class="np-title">Doin' This</div>
+            <div id="trackArtist" class="np-artist">Luke Combs</div>
+          </div>
+
+          <div onclick="seekAudioBar(event)" class="np-prog-wrap">
+            <div class="np-prog-rail">
+              <div id="progFill" class="np-prog-fill"></div>
+            </div>
+          </div>
+
+          <div class="np-controls">
+            <!-- Rewind (<<) -->
+            <button onclick="prevTrack()" class="np-icon-btn tap">
+              <svg width="34" height="24" viewBox="0 0 34 24" fill="#FFFFFF">
+                <polygon points="17,3 2,12 17,21"/>
+                <polygon points="32,3 17,12 32,21"/>
+              </svg>
+            </button>
+
+            <!-- Pause / Play (||) -->
+            <button onclick="togglePlay()" id="playBtnMain" class="np-icon-btn tap">
+              <svg id="playPauseSvg" width="26" height="26" viewBox="0 0 26 26" fill="#FFFFFF">
+                <rect x="4" y="2" width="6.5" height="22" rx="1.5"/>
+                <rect x="15.5" y="2" width="6.5" height="22" rx="1.5"/>
+              </svg>
+            </button>
+
+            <!-- Fast-Forward (>>) -->
+            <button onclick="nextTrack()" class="np-icon-btn tap">
+              <svg width="34" height="24" viewBox="0 0 34 24" fill="#FFFFFF">
+                <polygon points="2,3 17,12 2,21"/>
+                <polygon points="17,3 32,12 17,21"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================================================
+         PAGE 1: EXACT 5x2 APPLE CARPLAY ICON GRID (Photo 1)
+         ===================================================== -->
+    <section id="pageGrid" class="cp-page">
+      <div class="carplay-5x2-grid">
+
+        <!-- 1. Phone -->
+        <button onclick="handleAppClick('phone','Phone')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#34C759"/>
+              <path d="M30 23 C24 23 21 28 21 34 C21 58 42 79 66 79 C72 79 77 76 77 70 L77 60 C77 56 74 54 70 53 L59 51 C56 51 54 52 52 54 L47 59 C40 55 34 49 30 42 L35 37 C37 35 38 33 38 30 L36 19 C35 16 32 23 30 23 Z" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Phone</span>
+        </button>
+
+        <!-- 2. Music (Opens USB & FM Studio) -->
+        <button onclick="switchPage(2)" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#FA2D48"/>
+              <path d="M70 22 L38 29 L38 68 C38 74 33 78 27 78 C21 78 17 74 17 68 C17 62 21 58 27 58 C30 58 32 59 33 60 L33 23 L75 14 L75 61 C75 67 70 71 64 71 C58 71 54 67 54 61 C54 55 58 51 64 51 C67 51 69 52 70 53 Z" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Music</span>
+        </button>
+
+        <!-- 3. Maps -->
+        <button onclick="handleAppClick('maps','Maps')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#E8F6E3"/>
+              <polygon points="45,0 100,0 100,55 35,55" fill="#78C679"/>
+              <path d="M0 56 L100 42" stroke="#FFFFFF" stroke-width="12"/>
+              <path d="M48 0 L68 100" stroke="#FDB863" stroke-width="15"/>
+              <path d="M26 0 L44 100" stroke="#FF5A79" stroke-width="11"/>
+              <circle cx="46" cy="56" r="22" fill="#007AFF" stroke="#FFFFFF" stroke-width="4.5"/>
+              <polygon points="46,41 56,65 46,59 36,65" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Maps</span>
+        </button>
+
+        <!-- 4. Messages / WhatsApp -->
+        <button onclick="handleAppClick('whatsapp','Messages')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#34C759"/>
+              <path d="M50 20 C31 20 16 32 16 47 C16 55 21 63 29 68 L24 80 L38 73 C42 74 46 74 50 74 C69 74 84 62 84 47 C84 32 69 20 50 20 Z" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Messages</span>
+        </button>
+
+        <!-- 5. Books / YouTube -->
+        <button onclick="handleAppClick('youtube','YouTube')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#FF9500"/>
+              <path d="M22 26 C32 23 43 25 48 30 L48 76 C43 71 32 69 22 72 Z M78 26 C68 23 57 25 52 30 L52 76 C57 71 68 69 78 72 Z" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Books</span>
+        </button>
+
+        <!-- 6. Waze -->
+        <button onclick="handleAppClick('waze','Waze')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#33CCFF"/>
+              <path d="M54 22 C73 22 84 35 84 51 C84 62 77 70 67 73 L28 73 C21 73 16 68 16 62 C16 59 19 58 21 55 C23 51 23 45 25 39 C29 28 40 22 54 22 Z" fill="#FFFFFF" stroke="#000000" stroke-width="4.5"/>
+              <circle cx="45" cy="43" r="4" fill="#000000"/>
+              <circle cx="64" cy="43" r="4" fill="#000000"/>
+              <path d="M47 54 Q55 61 63 54" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="38" cy="75" r="8" fill="#000000"/>
+              <circle cx="66" cy="75" r="8" fill="#000000"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Waze</span>
+        </button>
+
+        <!-- 7. News / FM Radio -->
+        <button onclick="switchPage(2)" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#FFFFFF"/>
+              <polygon points="24,22 44,22 76,78 56,78" fill="#FA2D48"/>
+              <polygon points="24,48 40,78 24,78" fill="#FA2D48"/>
+              <polygon points="60,22 76,22 76,52" fill="#FA2D48"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">News</span>
+        </button>
+
+        <!-- 8. Calendar -->
+        <button onclick="switchPage(0)" class="cp-icon-item tap">
+          <div class="cp-squircle cal-squircle">
+            <div id="calDay" class="cal-day">TUE</div>
+            <div id="calNum" class="cal-num">19</div>
+          </div>
+          <span class="cp-icon-label">Calendar</span>
+        </button>
+
+        <!-- 9. Settings -->
+        <button onclick="switchPage(2)" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#8E8E93"/>
+              <circle cx="50" cy="50" r="34" fill="#3A3A3C" stroke="#E5E5EA" stroke-width="5"/>
+              <circle cx="50" cy="50" r="24" fill="none" stroke="#AEAEB2" stroke-width="5" stroke-dasharray="10 6"/>
+              <circle cx="50" cy="50" r="11" fill="#2C2C2E" stroke="#E5E5EA" stroke-width="4"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Settings</span>
+        </button>
+
+        <!-- 10. Podcasts / BitChord -->
+        <button onclick="handleAppClick('bitchord','BitChord')" class="cp-icon-item tap">
+          <div class="cp-squircle">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#AF52DE"/>
+              <circle cx="50" cy="46" r="28" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-dasharray="135 45" stroke-dashoffset="-22"/>
+              <circle cx="50" cy="46" r="18" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-dasharray="85 30" stroke-dashoffset="-15"/>
+              <circle cx="50" cy="44" r="7" fill="#FFFFFF"/>
+              <rect x="44" y="54" width="12" height="26" rx="6" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <span class="cp-icon-label">Podcasts</span>
+        </button>
+
+      </div>
+
+      <div class="dots-row">
+        <button onclick="switchPage(0)" class="page-dot"></button>
+        <button onclick="switchPage(1)" class="page-dot active"></button>
+        <button onclick="switchPage(2)" class="page-dot"></button>
+      </div>
+    </section>
+
+    <!-- =====================================================
+         PAGE 2: USB PENDRIVE, FM RADIO & STREAMING STUDIO
+         ===================================================== -->
+    <section id="pageStudio" class="cp-page">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="font-size:0.9rem; font-weight:700;">CarPlay Media, FM Radio & Apps</div>
+        <div style="display:flex; gap:6px;">
+          <button onclick="scanUsbHardware()" class="pill-btn active tap">Scan USB</button>
+          <button onclick="document.getElementById('usbFileInput').click()" class="pill-btn tap">Select MP3</button>
+          <button onclick="switchPage(0)" class="pill-btn tap">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="studio-grid">
+        <!-- Left: USB Songs & Folders -->
+        <div class="studio-box">
+          <div id="usbPathLabel" style="font-size:0.68rem; font-weight:700; color:#38BDF8;">USB Pendrive Tracks</div>
+          <div id="usbSongList" class="cp-scroll"></div>
+        </div>
+
+        <!-- Right: FM Radio Tuner + Spotify / Netflix / YouTube / BitChord -->
+        <div style="display:flex; flex-direction:column; gap:8px; min-height:0;">
+          <div class="studio-box" style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.68rem; font-weight:700; color:#AEAEB2;">FM RADIO TUNER</span>
+              <div style="display:flex; gap:5px;">
+                <button onclick="toggleSaveFm()" class="pill-btn tap" style="padding:3px 8px;">Save Fav</button>
+                <button onclick="openNativeRadio()" class="pill-btn tap" style="padding:3px 8px;">Hardware FM</button>
               </div>
             </div>
-            <div class="fm-header-right">
-              <button id="saveFmBtn" onclick="toggleSaveFm()" class="subtle-action-btn tap-target">Fav Station</button>
-              <button onclick="openNativeRadio()" class="subtle-action-btn tap-target">Hardware FM</button>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,0.35); padding:5px 8px; border-radius:10px;">
+              <button onclick="stepFm(-0.1)" class="pill-btn tap">-0.1</button>
+              <span id="fmFreqDisp" style="font-size:1rem; font-weight:800;">92.3 MHz</span>
+              <button onclick="stepFm(0.1)" class="pill-btn tap">+0.1</button>
             </div>
+
+            <div id="fmPresetGrid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;"></div>
           </div>
 
-          <div class="fm-tuner-bar">
-            <button onclick="stepFm(-0.1)" class="fm-adj-btn tap-target">-0.1</button>
-            <div class="fm-freq-center">
-              <span id="fmFreqDisp" class="fm-freq-readout">92.3 MHz</span>
-              <span id="fmSubHint" class="fm-status-tag">STEREO</span>
+          <div class="studio-box">
+            <div style="font-size:0.65rem; font-weight:700; color:#AEAEB2;">LAUNCH APPS</div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">
+              <button onclick="handleAppClick('spotify','Spotify')" class="pill-btn tap" style="background:#1DB954; border:none;">Spotify</button>
+              <button onclick="handleAppClick('netflix','Netflix')" class="pill-btn tap" style="background:#E50914; border:none;">Netflix</button>
+              <button onclick="handleAppClick('youtube','YouTube')" class="pill-btn tap" style="background:#FF0000; border:none;">YouTube</button>
+              <button onclick="handleAppClick('bitchord','BitChord')" class="pill-btn tap" style="background:#892CDC; border:none;">BitChord</button>
             </div>
-            <button onclick="stepFm(0.1)" class="fm-adj-btn tap-target">+0.1</button>
           </div>
-
-          <div id="fmPresetGrid" class="fm-presets-row"></div>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- STAGE 2: USB MEDIA EXPLORER -->
-    <section id="stageUsb" class="stage-view card-surface">
-      <div class="section-header" style="border-bottom:1px solid var(--sep-subtle); padding-bottom:8px;">
-        <div>
-          <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">USB Media Player</div>
-          <div id="usbPathLabel" style="font-size:0.65rem; font-weight:500; color:var(--text-secondary);">USB://PENDRIVE/01_Malay_Rock_Kapak</div>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button onclick="scanUsbHardware()" class="subtle-action-btn tap-target" style="padding:6px 10px; color:var(--accent-blue); border-color:var(--accent-blue);">Scan USB Drive</button>
-          <button onclick="shuffleUsbFolder()" class="subtle-action-btn tap-target" style="padding:6px 10px;">Shuffle</button>
-          <button onclick="document.getElementById('usbFileInput').click()" class="subtle-action-btn tap-target" style="padding:6px 10px; background:var(--accent-blue); border-color:var(--accent-blue); color:#fff;">Select Files</button>
-          <button onclick="switchStage('home')" class="subtle-action-btn tap-target" style="padding:6px 10px; color:var(--text-primary);">Back</button>
         </div>
       </div>
-
-      <div class="usb-split-grid">
-        <div id="usbFolderList" class="clean-scroll"></div>
-        <div id="usbSongList" class="clean-scroll"></div>
-      </div>
-    </section>
-
-    <!-- STAGE 3: LYRICS STAGE -->
-    <section id="stageLyrics" class="stage-view card-surface">
-      <div style="width:175px; flex-shrink:0; background:var(--bg-sec); border:1px solid var(--sep-subtle); border-radius:12px; padding:12px; display:flex; flex-direction:column; align-items:center; text-align:center;">
-        <div style="width:46px; height:46px; border-radius:10px; background:var(--bg-elevated); border:1px solid var(--sep-subtle); display:flex; align-items:center; justify-content:center; color:var(--accent-blue); margin-bottom:8px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          </svg>
-        </div>
-        <div id="lyrTitle" style="font-size:0.82rem; font-weight:700; color:var(--text-primary); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Isabella (Remastered)</div>
-        <div id="lyrArtist" style="font-size:0.66rem; font-weight:500; color:var(--text-secondary); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:10px;">Search · 320kbps</div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:5px; width:100%;">
-          <button onclick="prevTrack()" class="fm-adj-btn tap-target" style="padding:7px 0;">⏮</button>
-          <button onclick="togglePlay()" class="fm-adj-btn tap-target" style="padding:7px 0; background:var(--accent-blue); border-color:var(--accent-blue); color:#fff;">⏯</button>
-          <button onclick="nextTrack()" class="fm-adj-btn tap-target" style="padding:7px 0;">⏭</button>
-        </div>
-        <button onclick="handleAppClick('bitchord','BitChord')" class="subtle-action-btn tap-target" style="margin-top:8px; width:100%; padding:6px; color:var(--text-primary);">Open BitChord App</button>
-        <button onclick="switchStage('home')" class="subtle-action-btn tap-target" style="margin-top:5px; width:100%; padding:6px;">Back to Home</button>
-      </div>
-      <div id="lyricsStageBox" style="flex:1; display:flex; flex-direction:column; gap:8px; justify-content:center; padding:8px;"></div>
     </section>
 
   </main>
 
-  <!-- 3. SLIM BOTTOM NAVIGATION BAR -->
-  <nav class="slim-nav-bar">
-    <button id="navHome" onclick="switchStage('home')" class="nav-tab active tap-target">
-      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>Home</span>
-    </button>
-    <button id="navMedia" onclick="switchStage('usb')" class="nav-tab tap-target">
-      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-      <span>Media</span>
-    </button>
-    <button id="navWaze" onclick="handleAppClick('waze','Waze')" class="nav-tab tap-target">
-      <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-      <span>Navigation</span>
-    </button>
-    <button id="navApps" onclick="openCustomize()" class="nav-tab tap-target">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-      <span>Apps</span>
-    </button>
-    <button id="navSettings" onclick="openSettingsModal()" class="nav-tab tap-target">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Settings</span>
-    </button>
-  </nav>
-
-  <!-- Customize 4 Apps Modal -->
-  <div id="custModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <span style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Customize Quick App Launcher</span>
-        <span id="selCounter" style="font-size:0.72rem; font-weight:600; color:var(--accent-blue);">4 / 4 Selected</span>
-      </div>
-      <div id="modalAppList" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;"></div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button onclick="closeCustomize()" class="subtle-action-btn tap-target" style="padding:6px 12px; color:var(--text-primary);">Cancel</button>
-        <button onclick="saveCustomize()" class="subtle-action-btn tap-target" style="padding:6px 14px; background:var(--accent-blue); border-color:var(--accent-blue); color:#fff;">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">System Settings — Tesla Minimal Edition</span>
-        <button onclick="closeSettingsModal()" class="subtle-action-btn tap-target" style="padding:4px 9px;">Close</button>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div class="list-row-item" onclick="detectGpsLocation(true); closeSettingsModal();">
-          <div style="flex:1;">
-            <div style="font-size:0.78rem; font-weight:600; color:var(--text-primary);">Refresh GPS Telemetry & Weather</div>
-            <div style="font-size:0.64rem; color:var(--text-secondary);">Sync live speed, temperature and current city</div>
-          </div>
-          <span style="font-size:0.68rem; font-weight:600; color:var(--accent-blue);">Sync</span>
-        </div>
-        <div class="list-row-item" onclick="openNativeRadio(); closeSettingsModal();">
-          <div style="flex:1;">
-            <div style="font-size:0.78rem; font-weight:600; color:var(--text-primary);">Open Native Hardware FM App</div>
-            <div style="font-size:0.64rem; color:var(--text-secondary);">Launch built-in MCU aerial radio interface</div>
-          </div>
-          <span style="font-size:0.68rem; font-weight:600; color:var(--accent-blue);">Open</span>
-        </div>
-        <div class="list-row-item" onclick="document.getElementById('usbFileInput').click(); closeSettingsModal();">
-          <div style="flex:1;">
-            <div style="font-size:0.78rem; font-weight:600; color:var(--text-primary);">Mount Local USB Music Folder</div>
-            <div style="font-size:0.64rem; color:var(--text-secondary);">Load MP3 / FLAC / WAV files from USB storage</div>
-          </div>
-          <span style="font-size:0.68rem; font-weight:600; color:var(--accent-blue);">Browse</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="toastMsg" style="display:none; position:fixed; bottom:56px; left:50%; transform:translateX(-50%); z-index:200; padding:6px 14px; border-radius:8px; background:var(--bg-elevated); border:1px solid var(--sep-subtle); font-size:0.72rem; font-weight:600; color:var(--text-primary);"></div>
+  <div id="toastMsg"></div>
 </div>
 
 <script>
+  let curPage = 0; // 0 = Split-Screen Dashboard (Photo 2), 1 = 5x2 App Grid (Photo 1), 2 = USB/FM Studio
+
+  function switchPage(idx) {
+    curPage = idx;
+    document.getElementById('pageSplit').classList.toggle('active', idx === 0);
+    document.getElementById('pageGrid').classList.toggle('active', idx === 1);
+    document.getElementById('pageStudio').classList.toggle('active', idx === 2);
+
+    document.getElementById('cpShell').classList.toggle('dark-grid-bg', idx === 1);
+
+    const btn = document.getElementById('dockBottomBtn');
+    if (idx === 0) {
+      // 8-Dot Grid Icon
+      btn.innerHTML = `<svg width="38" height="22" viewBox="0 0 38 22" fill="none">
+        <rect x="1" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="11" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="21" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="31" y="2" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="1" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="11" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="21" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+        <rect x="31" y="12" width="7" height="8" rx="2" fill="#FFFFFF"/>
+      </svg>`;
+    } else {
+      // Split-Screen Dashboard Icon ([■≡])
+      btn.innerHTML = `<svg width="34" height="22" viewBox="0 0 34 22" fill="none">
+        <rect x="1" y="2" width="15" height="18" rx="2.5" fill="#FFFFFF"/>
+        <rect x="19" y="2.5" width="14" height="4" rx="1.5" fill="#FFFFFF"/>
+        <rect x="19" y="9" width="14" height="4" rx="1.5" fill="#FFFFFF"/>
+        <rect x="19" y="15.5" width="14" height="4" rx="1.5" fill="#FFFFFF"/>
+      </svg>`;
+    }
+  }
+
+  function toggleMainView() {
+    switchPage(curPage === 0 ? 1 : 0);
+  }
+
+  // Compatibility with CarLink native ActionStrip
+  function switchStage(stage) {
+    if (stage === 'home') switchPage(0);
+    else if (stage === 'usb') switchPage(2);
+    else switchPage(1);
+  }
+
+  const appPackages = {
+    phone: { pkg: 'dialer', url: 'tel:' },
+    maps: { pkg: 'com.google.android.apps.maps', url: 'https://maps.google.com' },
+    whatsapp: { pkg: 'com.whatsapp', url: 'https://whatsapp.com' },
+    youtube: { pkg: 'com.google.android.youtube', url: 'https://www.youtube.com' },
+    waze: { pkg: 'com.waze', url: 'https://waze.com/ul' },
+    bitchord: { pkg: 'app.bitchord.music', url: 'https://bitchord.org' },
+    spotify: { pkg: 'com.spotify.music', url: 'https://open.spotify.com' },
+    netflix: { pkg: 'com.netflix.mediaclient', url: 'https://www.netflix.com' }
+  };
+
+  function handleAppClick(id, label) {
+    const item = appPackages[id];
+    if (item && window.AndroidBridge && window.AndroidBridge.launchApp) {
+      window.AndroidBridge.launchApp(item.pkg, item.url);
+    } else {
+      showToast('Opening ' + label + '...');
+    }
+  }
+
   const usbFolders = [
     {
-      name: "01_Malay_Rock_Kapak",
-      tag: "Melayu Retro & Rock",
+      name: "01_CarPlay_Favorites",
+      tag: "Lossless Audio",
       tracks: [
-        { title: "Isabella (Remastered)", artist: "Search · 320kbps Stereo", dur: "04:12", lyrics: ["Isabella adalah kisah cinta dua dunia", "Mengapa kita berjumpa namun akhirnya terpisah", "Siang jadi malam, bulan jadi bintang", "Cinta kita tetap utuh di jiwa"] },
-        { title: "Sejati", artist: "Wings · 320kbps Stereo", dur: "04:45", lyrics: ["Sejati itu yang kau ucapkan", "Bila janji terpatri di dalam hati", "Tiada lagi ragu di perjalanan ini", "Moga kekal abadi selamanya"] },
-        { title: "Tiara", artist: "Kris · 320kbps Stereo", dur: "04:30", lyrics: ["Tiara, menggamit kenangan zaman persekolahan", "Tiara, kumimpi kita bersanding atas kayangan", "Seakan bisa kusentuh peristiwa semalam", "Di malam pesta engkau bisikkan kata"] },
-        { title: "Suci Dalam Debu", artist: "Iklim · 320kbps Stereo", dur: "04:22", lyrics: ["Engkau bagai air yang jernih", "Di dalam bekas yang berdebu", "Zahirnya kotoran itu terlihat", "Kesucian terlindung jua"] }
-      ]
-    },
-    {
-      name: "02_English_Highway_Hits",
-      tag: "English Pop & Driving",
-      tracks: [
-        { title: "Blinding Lights", artist: "The Weeknd · 320kbps Stereo", dur: "03:20", lyrics: ["I've been tryna call, I've been on my own for long enough", "Maybe you can show me how to love, maybe", "I look around and Sin City's cold and empty", "I said, ooh, I'm blinded by the lights"] },
-        { title: "Cruising Midnight", artist: "Synthwave Drive · FLAC", dur: "03:54", lyrics: ["Minimal reflections on the highway", "Smooth electric torque under city lights", "Cruising effortlessly into the horizon", "Quiet cabin, pure soundstage"] },
-        { title: "Hotel California (Live)", artist: "Eagles · 320kbps Stereo", dur: "06:30", lyrics: ["On a dark desert highway, cool wind in my hair", "Warm smell of colitas, rising up through the air", "Up ahead in the distance, I saw a shimmering light", "Welcome to the Hotel California"] }
-      ]
-    },
-    {
-      name: "03_Mandarin_Cantonese_Gold",
-      tag: "Beyond & Jay Chou",
-      tracks: [
-        { title: "Hai Kuo Tian Kong (海阔天空)", artist: "Beyond · 320kbps Stereo", dur: "05:26", lyrics: ["Jintian wo han ye li kan xue piao guo", "Yuan liu xia de xin bu zai hai pa", "Yuan liang wo zhe yi sheng bu ji fang zong ai zi you", "Na pa you yi tian zhi ni he wo"] },
-        { title: "Qi Li Xiang (七里香)", artist: "Jay Chou · 320kbps Stereo", dur: "04:59", lyrics: ["Chuang wai de ma que zai dian xian gan shang duo zui", "Ni shuo zhe yi ju hen you xia tian de gan jue", "Shou zhong de qian bi zai zhi shang lai lai hui hui", "Wo yong ji hang zi xing rong ni shi wo de shei"] }
-      ]
-    },
-    {
-      name: "04_Tamil_AR_Rahman_Vibes",
-      tag: "Tamil Melodies & Beats",
-      tracks: [
-        { title: "Munbe Vaa", artist: "A.R. Rahman · 320kbps Stereo", dur: "05:50", lyrics: ["Munbe vaa en anbe vaa, oone vaa uyire vaa", "Naan naana ketten ennai naane", "Nilaave vaa, vinnodum mannoadum", "Inbamo thunbamo unnoduthaan"] },
-        { title: "Arabic Kuthu", artist: "Anirudh · 320kbps Stereo", dur: "04:40", lyrics: ["Halamithi Habibo, Halamithi Habibo", "Malama Pitha Pithadhe", "Clean acoustics in the cabin speakers", "Cruising through KL night traffic"] }
+        { title: "Doin' This", artist: "Luke Combs", dur: "04:14" },
+        { title: "Isabella (Remastered)", artist: "Search", dur: "04:12" },
+        { title: "Blinding Lights", artist: "The Weeknd", dur: "03:20" },
+        { title: "Sejati", artist: "Wings", dur: "04:45" },
+        { title: "Hotel California", artist: "Eagles", dur: "06:30" }
       ]
     }
   ];
@@ -1178,191 +1123,43 @@
   let curFolderIdx = 0;
   let curTrackIdx = 0;
   let isPlaying = true;
-  let lyricIdx = 0;
   let curFmFreq = 92.3;
 
-  const appCatalog = [
-    {
-      id: 'waze',
-      name: 'Waze',
-      sub: 'Navigation',
-      pkg: 'com.waze',
-      url: 'https://waze.com/ul',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>`
-    },
-    {
-      id: 'usb',
-      name: 'USB Music',
-      sub: 'Media Player',
-      pkg: 'internal.usb',
-      url: '#usb',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`
-    },
-    {
-      id: 'bitchord',
-      name: 'BitChord',
-      sub: 'Chord Lyrics',
-      pkg: 'app.bitchord.music',
-      url: 'https://bitchord.org',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>`
-    },
-    {
-      id: 'youtube',
-      name: 'YouTube',
-      sub: 'Video',
-      pkg: 'com.google.android.youtube',
-      url: 'https://www.youtube.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="4"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/></svg>`
-    },
-    {
-      id: 'netflix',
-      name: 'Netflix',
-      sub: 'Movies & TV',
-      pkg: 'com.netflix.mediaclient',
-      url: 'https://www.netflix.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18l6-18v18M6 3l6 18M18 3v18"/></svg>`
-    },
-    {
-      id: 'spotify',
-      name: 'Spotify',
-      sub: 'Music Stream',
-      pkg: 'com.spotify.music',
-      url: 'https://open.spotify.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14.5c2.5-1 5.5-1 8 0"/><path d="M7 11.5c3-1.2 7-1.2 10 0"/></svg>`
-    },
-    {
-      id: 'ytmusic',
-      name: 'YT Music',
-      sub: 'Audio Stream',
-      pkg: 'com.google.android.apps.youtube.music',
-      url: 'https://music.youtube.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>`
-    },
-    {
-      id: 'tiktok',
-      name: 'TikTok',
-      sub: 'Short Video',
-      pkg: 'com.ss.android.ugc.trill',
-      url: 'https://www.tiktok.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>`
-    },
-    {
-      id: 'maps',
-      name: 'Google Maps',
-      sub: 'Navigation',
-      pkg: 'com.google.android.apps.maps',
-      url: 'https://maps.google.com',
-      color: '#3E8BFF',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-5.25-6-10a6 6 0 0 1 12 0c0 4.75-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/></svg>`
-    }
-  ];
-
-  // Default 2x2 per Tesla Minimal spec: Waze, USB Music, BitChord, YouTube
-  let activeApps = ['waze', 'usb', 'bitchord', 'youtube'];
-  try {
-    const saved = JSON.parse(localStorage.getItem('neondrive_tesla_4apps'));
-    if (Array.isArray(saved) && saved.length === 4) activeApps = saved;
-  } catch (e) {}
-  let tempApps = [...activeApps];
-
-  function renderAppGrid() {
-    const grid = document.getElementById('appGrid');
-    grid.innerHTML = activeApps.map(id => {
-      const a = appCatalog.find(x => x.id === id) || appCatalog[0];
-      return `
-        <button onclick="handleAppClick('${a.id}','${a.name}')" class="tesla-app-card tap-target">
-          <div class="app-icon-holder" style="color:${a.color}">${a.svg}</div>
-          <div style="min-width:0;">
-            <div class="app-title-txt">${a.name}</div>
-            <div class="app-sub-txt">${a.sub}</div>
-          </div>
-        </button>
-      `;
-    }).join('');
-  }
-
-  function handleAppClick(id, name) {
-    if (id === 'usb') {
-      switchStage('usb');
-      return;
-    }
-    const app = appCatalog.find(x => x.id === id) || appCatalog[0];
-    if (window.AndroidBridge && window.AndroidBridge.launchApp) {
-      window.AndroidBridge.launchApp(app.pkg, app.url);
-    } else {
-      showToast('Launching ' + app.name + '...');
-    }
-  }
-
   function renderUsbBrowser() {
-    const fList = document.getElementById('usbFolderList');
-    fList.innerHTML = usbFolders.map((f, idx) => `
-      <div onclick="selectUsbFolder(${idx})" class="list-row-item ${idx === curFolderIdx ? 'active' : ''}">
-        <div style="color:${idx === curFolderIdx ? 'var(--accent-blue)' : 'var(--text-secondary)'}; font-weight:700; font-size:0.75rem;">0${idx + 1}</div>
-        <div style="min-width:0; flex:1;">
-          <div style="font-size:0.76rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.name}</div>
-          <div style="font-size:0.62rem; color:var(--text-secondary);">${f.tag} · ${f.tracks.length} tracks</div>
-        </div>
-      </div>
-    `).join('');
-
-    const curFolder = usbFolders[curFolderIdx];
-    document.getElementById('usbPathLabel').textContent = `USB://PENDRIVE/${curFolder.name} (${curFolder.tracks.length} Tracks)`;
+    const curFolder = usbFolders[curFolderIdx] || usbFolders[0];
+    document.getElementById('usbPathLabel').textContent = `USB://${curFolder.name} (${curFolder.tracks.length} Tracks)`;
 
     const sList = document.getElementById('usbSongList');
     sList.innerHTML = curFolder.tracks.map((t, tIdx) => {
       const active = (tIdx === curTrackIdx);
       return `
-        <div onclick="playUsbSong(${curFolderIdx}, ${tIdx})" class="list-row-item ${active ? 'active' : ''}">
-          <div style="width:24px; height:24px; border-radius:6px; background:${active ? 'var(--accent-blue)' : 'var(--bg-elevated)'}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.68rem; font-weight:600; flex-shrink:0;">
+        <div onclick="playUsbSong(${curFolderIdx}, ${tIdx})" class="cp-row ${active ? 'active' : ''}">
+          <div style="width:22px; height:22px; border-radius:6px; background:${active ? '#0A84FF' : '#2C2C2E'}; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; flex-shrink:0;">
             ${tIdx + 1}
           </div>
           <div style="min-width:0; flex:1;">
-            <div style="font-size:0.76rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
-            <div style="font-size:0.62rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist}</div>
+            <div style="font-size:0.74rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
+            <div style="font-size:0.6rem; color:#AEAEB2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist}</div>
           </div>
-          <div style="font-size:0.64rem; font-weight:600; color:var(--text-secondary); font-variant-numeric:tabular-nums;">${t.dur}</div>
+          <div style="font-size:0.62rem; color:#AEAEB2;">${t.dur || 'USB'}</div>
         </div>
       `;
     }).join('');
-  }
-
-  function selectUsbFolder(fIdx) {
-    curFolderIdx = fIdx;
-    curTrackIdx = 0;
-    playUsbSong(fIdx, 0, false);
-  }
-
-  function shuffleUsbFolder() {
-    const f = usbFolders[curFolderIdx];
-    const randIdx = Math.floor(Math.random() * f.tracks.length);
-    playUsbSong(curFolderIdx, randIdx, false);
-    showToast('Shuffling: ' + f.name);
   }
 
   function playUsbSong(fIdx, tIdx, toast = true) {
     curFolderIdx = fIdx;
     curTrackIdx = tIdx;
     isPlaying = true;
-    lyricIdx = 0;
     const f = usbFolders[fIdx];
     const t = f.tracks[tIdx];
+    setMusicSource('usb');
 
-    document.getElementById('stereoIndicator').textContent = 'STEREO · USB MEDIA';
-    document.getElementById('folderTag').textContent = `${curFmFreq.toFixed(1)} MHz · ${f.name}`;
     document.getElementById('trackTitle').textContent = t.title;
     document.getElementById('trackArtist').textContent = t.artist;
-    document.getElementById('totTime').textContent = t.dur;
-    document.getElementById('lyrTitle').textContent = t.title;
-    document.getElementById('lyrArtist').textContent = t.artist;
+    const words = (t.artist || 'MUSIC').toUpperCase().split(' ');
+    document.getElementById('artTopTxt').textContent = words[0] || 'USB';
+    document.getElementById('artBotTxt').textContent = words[1] || 'AUDIO';
     syncPlayVisuals();
 
     if (t.uri && window.AndroidBridge && window.AndroidBridge.playNativeAudio) {
@@ -1378,14 +1175,13 @@
       audio.play().catch(() => {});
     }
 
-    updateLyricDisplay();
     renderUsbBrowser();
     if (toast) showToast('Playing: ' + t.title);
   }
 
   function scanUsbHardware() {
     if (window.AndroidBridge && window.AndroidBridge.scanUsbDrive) {
-      showToast('Scanning USB Pendrive & Storage...');
+      showToast('Scanning USB Pendrive & Phone Audio...');
       window.AndroidBridge.scanUsbDrive();
     } else {
       document.getElementById('usbFileInput').click();
@@ -1396,43 +1192,38 @@
     try {
       const scanned = JSON.parse(jsonStr);
       if (Array.isArray(scanned) && scanned.length > 0) {
-        usbFolders.length = 0;
+        const allTracks = [];
         scanned.forEach(f => {
-          usbFolders.push({
-            name: f.name || 'USB_Folder',
-            tag: f.tag || 'USB Pendrive',
-            tracks: (f.tracks || []).map(tr => ({
+          (f.tracks || []).forEach(tr => {
+            allTracks.push({
               title: tr.title || 'Audio Track',
-              artist: tr.artist || 'USB Pendrive',
+              artist: tr.artist || f.name || 'USB Audio',
               dur: tr.dur || 'USB',
-              uri: tr.uri || '',
-              lyrics: ['Playing from USB Pendrive: ' + (tr.title || 'Track')]
-            }))
+              uri: tr.uri || ''
+            });
           });
         });
-        curFolderIdx = 0;
-        curTrackIdx = 0;
-        renderUsbBrowser();
-        const firstFolder = usbFolders[0];
-        if (firstFolder && firstFolder.tracks.length > 0) {
-          const firstTrack = firstFolder.tracks[0];
-          document.getElementById('folderTag').textContent = `USB · ${firstFolder.name}`;
-          document.getElementById('trackTitle').textContent = firstTrack.title;
-          document.getElementById('trackArtist').textContent = firstTrack.artist;
-          document.getElementById('totTime').textContent = firstTrack.dur;
+        if (allTracks.length > 0) {
+          usbFolders[0] = {
+            name: scanned[0].name || 'USB_Music',
+            tag: 'USB Pendrive',
+            tracks: allTracks
+          };
+          curFolderIdx = 0;
+          curTrackIdx = 0;
+          renderUsbBrowser();
         }
-        showToast('USB Pendrive Ready (' + usbFolders.length + ' folders found)');
       }
     } catch (e) {}
   };
 
   function syncPlayVisuals() {
-    document.getElementById('playIconMain').textContent = isPlaying ? '⏸' : '▶';
-    document.getElementById('playTextMain').textContent = isPlaying ? 'Pause' : 'Play';
-    const eq = document.getElementById('eqContainer');
-    if (eq) {
-      eq.classList.toggle('playing-eq', isPlaying);
-      eq.classList.toggle('paused-eq', !isPlaying);
+    const btn = document.getElementById('playBtnMain');
+    if (!btn) return;
+    if (isPlaying) {
+      btn.innerHTML = `<svg width="26" height="26" viewBox="0 0 26 26" fill="#FFFFFF"><rect x="4" y="2" width="6.5" height="22" rx="1.5"/><rect x="15.5" y="2" width="6.5" height="22" rx="1.5"/></svg>`;
+    } else {
+      btn.innerHTML = `<svg width="26" height="26" viewBox="0 0 26 26" fill="#FFFFFF"><polygon points="5,2 23,13 5,24"/></svg>`;
     }
   }
 
@@ -1440,29 +1231,50 @@
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = Math.max(5, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
     document.getElementById('progFill').style.width = pct + '%';
-    const totalSec = 252;
-    const curSec = Math.round((pct / 100) * totalSec);
-    const mm = String(Math.floor(curSec / 60)).padStart(2, '0');
-    const ss = String(curSec % 60).padStart(2, '0');
-    document.getElementById('curTime').textContent = `${mm}:${ss}`;
   }
 
-  function updateLyricDisplay() {
-    const t = usbFolders[curFolderIdx].tracks[curTrackIdx];
-    const lines = t.lyrics || ["Playing high-bitrate audio..."];
-    const line = lines[lyricIdx % lines.length];
-    document.getElementById('liveLyricLine').textContent = '"' + line + '"';
+  // ===== Now Playing source: 'usb' | 'fm' | 'spotify' | 'bitchord' =====
+  let musicSource = 'usb';
+  const sourceStyles = {
+    usb:      { name: 'USB Music', dot: '#0A84FF', hint: 'TAP FOR USB / FM', art: 'linear-gradient(145deg, #0A4D68, #088395, #F59E0B)' },
+    fm:       { name: 'FM Radio',  dot: '#0A84FF', hint: 'FM STEREO',        art: 'linear-gradient(145deg, #0A3D91, #0A84FF, #5AC8FA)' },
+    spotify:  { name: 'Spotify',   dot: '#1ED760', hint: 'TAP TO OPEN',      art: 'linear-gradient(145deg, #121212, #1DB954, #1ED760)' },
+    bitchord: { name: 'BitChord',  dot: '#FF9500', hint: 'CHORD & LYRICS',   art: 'linear-gradient(145deg, #3A1C71, #D76D77, #FFAF7B)' }
+  };
 
-    const box = document.getElementById('lyricsStageBox');
-    box.innerHTML = lines.map((l, i) => {
-      const act = (i === (lyricIdx % lines.length));
-      return `<div onclick="lyricIdx=${i};updateLyricDisplay()" style="cursor:pointer; font-size:${act ? '1rem' : '0.78rem'}; font-weight:${act ? '700' : '500'}; color:${act ? 'var(--text-primary)' : 'var(--text-secondary)'}; transition:all 0.2s;">${l}</div>`;
-    }).join('');
+  function setMusicSource(src) {
+    if (!sourceStyles[src]) src = 'usb';
+    musicSource = src;
+    const s = sourceStyles[src];
+    const card = document.getElementById('musicCard');
+    if (card) card.className = 'frosted-glass cp-music-card src-' + src;
+    const n = document.getElementById('srcName'); if (n) n.textContent = s.name;
+    const d = document.getElementById('srcDot'); if (d) d.style.background = s.dot;
+    const h = document.getElementById('artHint'); if (h) h.textContent = s.hint;
+    const a = document.getElementById('albumArt'); if (a) a.style.background = s.art;
+  }
+
+  function isExternalSource() {
+    return musicSource === 'spotify' || musicSource === 'bitchord';
+  }
+
+  function openCurrentSourceApp() {
+    if (isExternalSource()) handleAppClick(musicSource, sourceStyles[musicSource].name);
+    else switchPage(2);
+  }
+
+  function sendExternalControl(cmd) {
+    if (window.AndroidBridge && window.AndroidBridge.sendMediaControl) {
+      window.AndroidBridge.sendMediaControl(cmd);
+    } else {
+      showToast(sourceStyles[musicSource].name + ' · ' + cmd);
+    }
   }
 
   function togglePlay() {
     isPlaying = !isPlaying;
     syncPlayVisuals();
+    if (isExternalSource()) { sendExternalControl('playpause'); return; }
     if (window.AndroidBridge && window.AndroidBridge.setNativeAudioPlaying) {
       window.AndroidBridge.setNativeAudioPlaying(isPlaying);
     }
@@ -1473,34 +1285,41 @@
   }
 
   function nextTrack() {
+    if (isExternalSource()) { sendExternalControl('next'); return; }
+    if (musicSource === 'fm') { stepFmPreset(1); return; }
     const f = usbFolders[curFolderIdx];
     curTrackIdx = (curTrackIdx + 1) % f.tracks.length;
     playUsbSong(curFolderIdx, curTrackIdx);
   }
 
   function prevTrack() {
+    if (isExternalSource()) { sendExternalControl('prev'); return; }
+    if (musicSource === 'fm') { stepFmPreset(-1); return; }
     const f = usbFolders[curFolderIdx];
     curTrackIdx = (curTrackIdx - 1 + f.tracks.length) % f.tracks.length;
     playUsbSong(curFolderIdx, curTrackIdx);
   }
 
-  function switchStage(stage) {
-    document.getElementById('stageHome').classList.toggle('active', stage === 'home');
-    document.getElementById('stageUsb').classList.toggle('active', stage === 'usb');
-    document.getElementById('stageLyrics').classList.toggle('active', stage === 'lyrics');
-
-    document.getElementById('navHome').classList.toggle('active', stage === 'home');
-    document.getElementById('navMedia').classList.toggle('active', stage === 'usb' || stage === 'lyrics');
+  function stepFmPreset(dir) {
+    const cur = curFmFreq.toFixed(1);
+    let idx = fmFavs.findIndex(p => p.freq === cur);
+    idx = (idx + dir + fmFavs.length) % fmFavs.length;
+    tuneFm(fmFavs[idx].freq, fmFavs[idx].name);
   }
 
   let saveFmMode = false;
-  let holdFmTimer = null;
-
   const myStationNames = {
     '92.3': 'ARENA', '92.9': 'HITZ', '103.3': 'ERA', '101.8': 'MY FM', '99.3': 'RAAGA',
-    '94.5': 'MIX FM', '95.8': 'FLY FM', '96.7': 'SINAR', '97.6': 'HOT FM',
-    '98.8': '988 FM', '105.3': 'SURIA', '105.7': 'LITE', '104.9': 'MELODY',
-    '91.5': 'IKIM', '90.3': 'TRAXX', '88.1': 'EIGHT'
+    '94.5': 'MIX FM', '95.8': 'FLY FM', '96.7': 'SINAR', '97.6': 'HOT FM', '105.7': 'LITE'
+  };
+  const myStationStreams = {
+    '92.3': 'https://stream.zeno.fm/f3wvbbqmdg8uv',
+    '92.9': 'https://stream.rcs.revma.com/488bf80298uvv',
+    '103.3': 'https://stream.rcs.revma.com/55tyxs0298uvv',
+    '101.8': 'https://stream.rcs.revma.com/79f96r0298uvv',
+    '99.3': 'https://stream.rcs.revma.com/12w89r0298uvv',
+    '94.5': 'https://stream.rcs.revma.com/37829r0298uvv',
+    '96.7': 'https://stream.rcs.revma.com/28429r0298uvv'
   };
 
   let fmFavs = [
@@ -1509,10 +1328,6 @@
     { freq: '103.3', name: 'ERA' },
     { freq: '101.8', name: 'MY FM' }
   ];
-  try {
-    const savedFm = JSON.parse(localStorage.getItem('nexdrive_fm_presets'));
-    if (Array.isArray(savedFm) && savedFm.length === 4) fmFavs = savedFm;
-  } catch (e) {}
 
   function renderFmFavs() {
     const grid = document.getElementById('fmPresetGrid');
@@ -1520,15 +1335,10 @@
     const fTxt = curFmFreq.toFixed(1);
     grid.innerHTML = fmFavs.map((p, idx) => {
       const isCur = (p.freq === fTxt) && !saveFmMode;
-      const cls = saveFmMode ? 'saving' : (isCur ? 'active' : '');
       return `
-        <button
-          onmousedown="startHoldFm(${idx})" onmouseup="clearHoldFm()" onmouseleave="clearHoldFm()"
-          ontouchstart="startHoldFm(${idx})" ontouchend="clearHoldFm()"
-          onclick="clickFmSlot(${idx})"
-          class="preset-pill ${cls} tap-target">
-          <div class="preset-freq">${saveFmMode ? 'SAVE' : p.freq}</div>
-          <div class="preset-name">${saveFmMode ? 'SLOT ' + (idx + 1) : p.name}</div>
+        <button onclick="clickFmSlot(${idx})" class="pill-btn ${isCur ? 'active' : ''} tap" style="padding:6px 4px; text-align:center;">
+          <div style="font-size:0.72rem; font-weight:800;">${saveFmMode ? 'SAVE' : p.freq}</div>
+          <div style="font-size:0.55rem; opacity:0.85;">${p.name}</div>
         </button>
       `;
     }).join('');
@@ -1536,100 +1346,39 @@
 
   function toggleSaveFm() {
     saveFmMode = !saveFmMode;
-    const btn = document.getElementById('saveFmBtn');
-    const hint = document.getElementById('fmSubHint');
-    if (saveFmMode) {
-      btn.textContent = 'Cancel';
-      btn.style.color = 'var(--accent-warn)';
-      hint.textContent = 'SELECT SLOT';
-      hint.style.color = 'var(--accent-warn)';
-    } else {
-      btn.textContent = 'Fav Station';
-      btn.style.color = 'var(--text-secondary)';
-      hint.textContent = 'STEREO';
-      hint.style.color = 'var(--text-secondary)';
-    }
     renderFmFavs();
-  }
-
-  function saveFmToSlot(idx) {
-    const fTxt = curFmFreq.toFixed(1);
-    const autoName = myStationNames[fTxt] || ('CH ' + (idx + 1));
-    fmFavs[idx].freq = fTxt;
-    fmFavs[idx].name = autoName;
-    try {
-      localStorage.setItem('nexdrive_fm_presets', JSON.stringify(fmFavs));
-    } catch (e) {}
-    saveFmMode = false;
-    const btn = document.getElementById('saveFmBtn');
-    btn.textContent = 'Fav Station';
-    btn.style.color = 'var(--text-secondary)';
-    const hint = document.getElementById('fmSubHint');
-    hint.textContent = 'SAVED';
-    hint.style.color = 'var(--accent-blue)';
-    renderFmFavs();
-    showToast(`Saved ${fTxt} MHz (${autoName}) to Preset ${idx + 1}`);
-  }
-
-  function startHoldFm(idx) {
-    clearHoldFm();
-    holdFmTimer = setTimeout(() => {
-      holdFmTimer = 'done';
-      saveFmToSlot(idx);
-    }, 650);
-  }
-
-  function clearHoldFm() {
-    if (holdFmTimer && holdFmTimer !== 'done') {
-      clearTimeout(holdFmTimer);
-      holdFmTimer = null;
-    }
   }
 
   function clickFmSlot(idx) {
-    if (holdFmTimer === 'done') {
-      holdFmTimer = null;
-      return;
-    }
     if (saveFmMode) {
-      saveFmToSlot(idx);
+      const fTxt = curFmFreq.toFixed(1);
+      fmFavs[idx].freq = fTxt;
+      fmFavs[idx].name = myStationNames[fTxt] || ('CH ' + (idx + 1));
+      saveFmMode = false;
+      renderFmFavs();
+      showToast('Saved FM ' + fTxt + ' MHz');
     } else {
       tuneFm(fmFavs[idx].freq, fmFavs[idx].name);
     }
   }
 
-  const myStationStreams = {
-    '92.3': 'https://stream.zeno.fm/f3wvbbqmdg8uv',
-    '92.9': 'https://stream.rcs.revma.com/488bf80298uvv',
-    '103.3': 'https://stream.rcs.revma.com/55tyxs0298uvv',
-    '101.8': 'https://stream.rcs.revma.com/79f96r0298uvv',
-    '99.3': 'https://stream.rcs.revma.com/12w89r0298uvv',
-    '94.5': 'https://stream.rcs.revma.com/37829r0298uvv',
-    '96.7': 'https://stream.rcs.revma.com/28429r0298uvv',
-    '105.7': 'https://stream.rcs.revma.com/61829r0298uvv',
-    '104.9': 'https://stream.rcs.revma.com/83829r0298uvv'
-  };
-
   function tuneFm(freqStr, station) {
     curFmFreq = parseFloat(freqStr) || 92.3;
     const fTxt = curFmFreq.toFixed(1);
     const stName = station || myStationNames[fTxt] || 'FM Stereo';
+    setMusicSource('fm');
     isPlaying = true;
     syncPlayVisuals();
     document.getElementById('fmFreqDisp').textContent = fTxt + ' MHz';
-    document.getElementById('stereoIndicator').textContent = 'STEREO · FM TUNER';
-    document.getElementById('folderTag').textContent = fTxt + ' MHz · FM Broadcast';
     document.getElementById('trackTitle').textContent = fTxt + ' MHz — ' + stName;
-    document.getElementById('trackArtist').textContent = 'Hardware MCU + Digital FM Tuner';
-    document.getElementById('liveLyricLine').textContent = '"Receiving live FM ' + fTxt + ' MHz (' + stName + ')..."';
+    document.getElementById('trackArtist').textContent = 'CarPlay FM Radio Stereo';
+    document.getElementById('artTopTxt').textContent = fTxt;
+    document.getElementById('artBotTxt').textContent = stName;
     renderFmFavs();
 
-    // 1. Tune physical Android Car Player MCU radio chip
     if (window.AndroidBridge && window.AndroidBridge.tuneHardwareFm) {
       window.AndroidBridge.tuneHardwareFm(fTxt);
     }
-
-    // 2. Also start digital audio stream fallback if online so sound always plays
     const streamUrl = myStationStreams[fTxt];
     if (streamUrl) {
       if (window.AndroidBridge && window.AndroidBridge.playNativeAudio) {
@@ -1640,7 +1389,7 @@
         audio.play().catch(() => {});
       }
     }
-    showToast('Tuned FM ' + fTxt + ' MHz · ' + stName);
+    showToast('FM ' + fTxt + ' MHz · ' + stName);
   }
 
   function stepFm(delta) {
@@ -1655,75 +1404,7 @@
     if (window.AndroidBridge && window.AndroidBridge.openHardwareRadioApp) {
       window.AndroidBridge.openHardwareRadioApp();
     } else {
-      showToast('Opening Native Hardware FM Radio...');
-    }
-  }
-
-  function setSpeedUI(kmh) {
-    const el = document.getElementById('speedVal');
-    if (el) {
-      el.textContent = kmh;
-      el.style.color = kmh > 110 ? 'var(--accent-warn)' : 'var(--text-primary)';
-    }
-  }
-
-  function simSpeed() {
-    const speeds = [0, 52, 85, 115, 68];
-    const cur = parseInt(document.getElementById('speedVal').textContent, 10) || 0;
-    const next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
-    setSpeedUI(next);
-  }
-
-  function openCustomize() {
-    tempApps = [...activeApps];
-    renderModalApps();
-    document.getElementById('custModal').classList.add('open');
-  }
-
-  function closeCustomize() {
-    document.getElementById('custModal').classList.remove('open');
-  }
-
-  function openSettingsModal() {
-    document.getElementById('settingsModal').classList.add('open');
-  }
-
-  function closeSettingsModal() {
-    document.getElementById('settingsModal').classList.remove('open');
-  }
-
-  function renderModalApps() {
-    document.getElementById('selCounter').textContent = `${tempApps.length} / 4 Selected`;
-    const list = document.getElementById('modalAppList');
-    list.innerHTML = appCatalog.map(a => {
-      const sel = tempApps.includes(a.id);
-      return `
-        <button onclick="toggleTempApp('${a.id}')" style="padding:10px 6px; border-radius:10px; border:1px solid ${sel ? 'var(--accent-blue)' : 'var(--sep-subtle)'}; background:${sel ? 'rgba(62,139,255,0.15)' : 'var(--bg-sec)'}; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--text-primary); cursor:pointer;">
-          <div style="width:28px; height:28px; border-radius:7px; background:var(--bg-elevated); display:flex; align-items:center; justify-content:center; color:var(--accent-blue);">${a.svg}</div>
-          <span style="font-size:0.65rem; font-weight:600;">${a.name}</span>
-        </button>
-      `;
-    }).join('');
-  }
-
-  function toggleTempApp(id) {
-    if (tempApps.includes(id)) {
-      if (tempApps.length > 1) tempApps = tempApps.filter(x => x !== id);
-    } else if (tempApps.length < 4) {
-      tempApps.push(id);
-    }
-    renderModalApps();
-  }
-
-  function saveCustomize() {
-    if (tempApps.length === 4) {
-      activeApps = [...tempApps];
-      try {
-        localStorage.setItem('neondrive_tesla_4apps', JSON.stringify(activeApps));
-      } catch (e) {}
-      renderAppGrid();
-      closeCustomize();
-      showToast('Saved Quick Launcher Apps');
+      showToast('Opening Hardware FM Radio...');
     }
   }
 
@@ -1731,19 +1412,17 @@
     const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('audio/') || /\.(mp3|flac|wav|m4a)$/i.test(f.name));
     if (!files.length) return;
     const folderName = (files[0].webkitRelativePath || 'USB_Audio').split('/')[0] || 'USB_Audio';
-    const newFolder = {
+    usbFolders.unshift({
       name: folderName,
       tag: 'Local USB Storage',
       tracks: files.map(f => ({
         title: f.name.replace(/\.[^.]+$/, ''),
         artist: 'USB Audio Track',
         dur: 'LIVE',
-        fileUrl: URL.createObjectURL(f),
-        lyrics: ['Playing local audio file: ' + f.name]
+        fileUrl: URL.createObjectURL(f)
       }))
-    };
-    usbFolders.unshift(newFolder);
-    selectUsbFolder(0);
+    });
+    playUsbSong(0, 0);
   }
 
   function showToast(msg) {
@@ -1751,47 +1430,138 @@
     t.textContent = msg;
     t.style.display = 'block';
     clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2400);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2200);
   }
 
-  function updateClockUI() {
+  function updateClockAndCalendar() {
     const now = new Date();
-    const tStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    // 12-hour format like CarPlay (e.g. 9:41, 11:09)
+    const h12 = (now.getHours() % 12) || 12;
+    const tStr = h12 + ':' + String(now.getMinutes()).padStart(2, '0');
     const cEl = document.getElementById('bigClock');
-    const dEl = document.getElementById('bigDate');
     if (cEl) cEl.textContent = tStr;
-    if (dEl) dEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+    const dName = now.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
+    const dNum = now.getDate();
+    const calDayEl = document.getElementById('calDay');
+    const calNumEl = document.getElementById('calNum');
+    if (calDayEl) calDayEl.textContent = dName;
+    if (calNumEl) calNumEl.textContent = dNum;
   }
-  setInterval(updateClockUI, 1000);
-  updateClockUI();
+  setInterval(updateClockAndCalendar, 1000);
+  updateClockAndCalendar();
+
+  // ===== Battery percentage (phone / head unit) =====
+  function renderBattery(pct, charging) {
+    if (pct == null || isNaN(pct) || pct < 0) return;
+    pct = Math.round(pct);
+    const t = document.getElementById('battTxt');
+    const f = document.getElementById('battFill');
+    if (t) t.textContent = pct + '%' + (charging ? '⚡' : '');
+    if (f) {
+      f.style.width = Math.max(4, pct) + '%';
+      f.style.background = charging ? '#30D158' : (pct <= 20 ? '#FF453A' : '#FFFFFF');
+    }
+  }
+  window.onAndroidBattery = renderBattery;
+
+  function updateBattery() {
+    if (window.AndroidBridge && window.AndroidBridge.getBatteryInfo) {
+      try {
+        const info = JSON.parse(window.AndroidBridge.getBatteryInfo());
+        renderBattery(info.level, info.charging);
+        return;
+      } catch (e) {}
+    }
+    if (navigator.getBattery) {
+      navigator.getBattery().then(b => renderBattery(b.level * 100, b.charging)).catch(() => {});
+    }
+  }
+  updateBattery();
+  setInterval(updateBattery, 30000);
+
+  function triggerVoiceAssistant() {
+    const card = document.getElementById('voiceCard');
+    const titleEl = document.getElementById('locVal');
+    const subEl = document.getElementById('subTelemetry');
+    if (card) card.classList.add('listening');
+    if (titleEl) titleEl.textContent = 'Listening...';
+    if (subEl) subEl.textContent = 'Speak now...';
+
+    if (window.AndroidBridge && window.AndroidBridge.startVoiceAssistant) {
+      window.AndroidBridge.startVoiceAssistant();
+      setTimeout(() => {
+        if (card) card.classList.remove('listening');
+        if (titleEl) titleEl.textContent = 'Voice Command';
+        if (subEl) subEl.textContent = 'Tap to speak';
+      }, 4500);
+      return;
+    }
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      try {
+        const rec = new SpeechRec();
+        rec.lang = 'ms-MY';
+        rec.interimResults = false;
+        rec.onresult = (ev) => {
+          const spoken = (ev.results[0][0].transcript || '').trim();
+          if (titleEl) titleEl.textContent = '"' + spoken + '"';
+          const low = spoken.toLowerCase();
+          if (low.includes('waze') || low.includes('pergi') || low.includes('jalan')) {
+            handleAppClick('waze', 'Waze');
+          } else if (low.includes('youtube')) {
+            handleAppClick('youtube', 'YouTube');
+          } else if (low.includes('netflix')) {
+            handleAppClick('netflix', 'Netflix');
+          } else if (low.includes('radio') || low.includes('era') || low.includes('hitz')) {
+            tuneFm('92.9', 'HITZ FM');
+          }
+        };
+        rec.onend = () => {
+          setTimeout(() => {
+            if (card) card.classList.remove('listening');
+            if (titleEl) titleEl.textContent = 'Voice Command';
+            if (subEl) subEl.textContent = 'Tap to speak';
+          }, 2200);
+        };
+        rec.start();
+        return;
+      } catch (e) {}
+    }
+
+    showToast('Voice Assistant Active — Speak now');
+    setTimeout(() => {
+      if (card) card.classList.remove('listening');
+      if (titleEl) titleEl.textContent = 'Voice Command';
+      if (subEl) subEl.textContent = 'Tap to speak';
+    }, 3500);
+  }
 
   let lastGeoFetch = 0;
   function detectGpsLocation(showFeedback = false) {
     if (!("geolocation" in navigator)) return;
-    if (showFeedback) showToast('Syncing GPS Telemetry...');
     navigator.geolocation.watchPosition(async pos => {
       const kmh = pos.coords.speed && pos.coords.speed > 0 ? Math.round(pos.coords.speed * 3.6) : 0;
-      setSpeedUI(kmh);
-
+      const subEl = document.getElementById('subTelemetry');
+      if (subEl && kmh > 0) {
+        /* voice card stays clean */
+      }
       const nowMs = Date.now();
       if (nowMs - lastGeoFetch > 60000 || showFeedback) {
         lastGeoFetch = nowMs;
         showFeedback = false;
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
         try {
-          const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-          const wData = await wRes.json();
-          if (wData && wData.current_weather) {
-            document.getElementById('tempVal').textContent = `${Math.round(wData.current_weather.temperature)}°C`;
-          }
-        } catch (e) {}
-        try {
-          const gRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
+          const gRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=14`);
           const gData = await gRes.json();
           if (gData && gData.address) {
             const area = gData.address.suburb || gData.address.town || gData.address.city || gData.address.state;
-            if (area) document.getElementById('locVal').textContent = area;
+            if (area) {
+              const p1 = document.getElementById('mapPinLabel1');
+              const p2 = document.getElementById('mapPinLabel2');
+              const parts = area.split(' ');
+              if (p1) p1.textContent = parts[0] || area;
+              if (p2) p2.textContent = parts.slice(1).join(' ') || '';
+            }
           }
         } catch (e) {}
       }
@@ -1799,29 +1569,34 @@
   }
   detectGpsLocation(false);
 
-  // Android Native Media Broadcast Hook
-  window.onAndroidMediaUpdate = function(title, artist, posMs, durMs, playing) {
+  window.onAndroidMediaUpdate = function(title, artist, posMs, durMs, playing, source) {
     if (title) {
+      if (source === 'spotify' || source === 'bitchord') {
+        if (musicSource !== source) setMusicSource(source);
+        const words = (artist || source).toUpperCase().split(' ');
+        document.getElementById('artTopTxt').textContent = words[0] || source.toUpperCase();
+        document.getElementById('artBotTxt').textContent = words[1] || '';
+        if (durMs > 0) {
+          const pct = Math.max(0, Math.min(100, (posMs / durMs) * 100));
+          document.getElementById('progFill').style.width = pct + '%';
+        }
+      }
       document.getElementById('trackTitle').textContent = title;
-      document.getElementById('trackArtist').textContent = artist || 'Android Media';
-      document.getElementById('lyrTitle').textContent = title;
-      document.getElementById('lyrArtist').textContent = artist || 'Android Media';
+      document.getElementById('trackArtist').textContent = artist || sourceStyles[musicSource].name;
       isPlaying = !!playing;
       syncPlayVisuals();
     }
   };
 
-  setInterval(() => {
-    if (isPlaying) {
-      lyricIdx++;
-      updateLyricDisplay();
-    }
-  }, 3500);
+  // Mark source when user launches Spotify / BitChord from the dashboard
+  const _origHandleAppClick = handleAppClick;
+  handleAppClick = function(id, label) {
+    if (id === 'spotify' || id === 'bitchord') setMusicSource(id);
+    _origHandleAppClick(id, label);
+  };
 
-  renderAppGrid();
   renderUsbBrowser();
   renderFmFavs();
-  updateLyricDisplay();
 </script>
 </body>
 </html>
