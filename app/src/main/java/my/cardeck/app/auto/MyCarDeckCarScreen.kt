@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.KeyEvent
 import android.provider.MediaStore
 import android.view.MotionEvent
 import android.webkit.JavascriptInterface
@@ -77,11 +78,12 @@ class MyCarDeckCarScreen(carContext: CarContext) : Screen(carContext) {
             if (title.isNotEmpty()) {
                 val safeTitle = JSONObject.quote(title)
                 val safeArtist = JSONObject.quote(MediaStateHolder.artist)
+                val safeSource = JSONObject.quote(MediaStateHolder.sourceApp)
                 val posMs = (MediaStateHolder.currentEstimatedPositionSec() * 1000).toLong()
                 val durMs = MediaStateHolder.durationMs
                 val playing = MediaStateHolder.isPlaying
                 webView?.evaluateJavascript(
-                    "if(window.onAndroidMediaUpdate) window.onAndroidMediaUpdate($safeTitle, $safeArtist, $posMs, $durMs, $playing);",
+                    "if(window.onAndroidMediaUpdate) window.onAndroidMediaUpdate($safeTitle, $safeArtist, $posMs, $durMs, $playing, $safeSource);",
                     null
                 )
             }
@@ -442,12 +444,72 @@ class MyCarDeckCarScreen(carContext: CarContext) : Screen(carContext) {
         }
 
         @JavascriptInterface
+        fun startVoiceAssistant() {
+            val intents = listOf(
+                Intent(Intent.ACTION_VOICE_COMMAND).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
+                Intent("android.speech.action.WEB_SEARCH").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
+                Intent(Intent.ACTION_ASSIST).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            )
+            for (intent in intents) {
+                try {
+                    carContext.startActivity(intent)
+                    return
+                } catch (_: Exception) {}
+            }
+            launchPackageOnPhone("com.google.android.googlequicksearchbox")
+        }
+
+        @JavascriptInterface
+        fun getBatteryInfo(): String {
+            return try {
+                val bi = carContext.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val level = bi?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = bi?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+                val status = bi?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+                val charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                val pct = if (level >= 0 && scale > 0) level * 100 / scale else -1
+                JSONObject().put("level", pct).put("charging", charging).toString()
+            } catch (_: Exception) {
+                "{\"level\":-1,\"charging\":false}"
+            }
+        }
+
+        @JavascriptInterface
+        fun sendMediaControl(cmd: String) {
+            try {
+                val audioManager = carContext.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager ?: return
+                val keyCode = when (cmd) {
+                    "prev" -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+                    "next" -> KeyEvent.KEYCODE_MEDIA_NEXT
+                    else -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                }
+                val now = SystemClock.uptimeMillis()
+                audioManager.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0))
+                audioManager.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0))
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
         fun launchApp(packageName: String, fallbackUrl: String) {
+            if (packageName.contains("spotify", true)) {
+                MediaStateHolder.sourceApp = "spotify"
+            } else if (packageName.contains("bitchord", true)) {
+                MediaStateHolder.sourceApp = "bitchord"
+            }
             launchPackageOnPhone(packageName)
         }
     }
 
     fun launchPackageOnPhone(packageName: String) {
+        if (packageName == "dialer" || packageName == "com.android.dialer") {
+            try {
+                carContext.startActivity(Intent(Intent.ACTION_DIAL).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+                return
+            } catch (_: Exception) {}
+        }
         val pm = carContext.packageManager
         try {
             val launchIntent = pm.getLaunchIntentForPackage(packageName)
@@ -502,11 +564,11 @@ class CarControlMenuScreen(
         val itemList = ItemList.Builder()
             .addItem(
                 Row.Builder()
-                    .setTitle("🏠 Tukar Paparan: Home / USB / Lirik")
-                    .addText("Tekan untuk tukar skrin pada dashboard Tesla")
+                    .setTitle("🏠 Tukar Paparan: Dashboard / 10 Apps / USB")
+                    .addText("Tekan untuk tukar skrin pada CarPlay")
                     .setOnClickListener {
                         mainScreen.evalJsOnSurface(
-                            "(function(){ var h=document.getElementById('stageHome').classList.contains('active'); var u=document.getElementById('stageUsb').classList.contains('active'); switchStage(h ? 'usb' : (u ? 'lyrics' : 'home')); })();"
+                            "if(window.toggleMainView) window.toggleMainView();"
                         )
                         screenManager.pop()
                     }
