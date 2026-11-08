@@ -1023,8 +1023,9 @@
           <div id="usbPathLabel" style="font-size:0.65rem; font-weight:500; color:var(--text-secondary);">USB://PENDRIVE/01_Malay_Rock_Kapak</div>
         </div>
         <div style="display:flex; gap:6px;">
+          <button onclick="scanUsbHardware()" class="subtle-action-btn tap-target" style="padding:6px 10px; color:var(--accent-blue); border-color:var(--accent-blue);">Scan USB Drive</button>
           <button onclick="shuffleUsbFolder()" class="subtle-action-btn tap-target" style="padding:6px 10px;">Shuffle</button>
-          <button onclick="document.getElementById('usbFileInput').click()" class="subtle-action-btn tap-target" style="padding:6px 10px; background:var(--accent-blue); border-color:var(--accent-blue); color:#fff;">Load USB Folder</button>
+          <button onclick="document.getElementById('usbFileInput').click()" class="subtle-action-btn tap-target" style="padding:6px 10px; background:var(--accent-blue); border-color:var(--accent-blue); color:#fff;">Select Files</button>
           <button onclick="switchStage('home')" class="subtle-action-btn tap-target" style="padding:6px 10px; color:var(--text-primary);">Back</button>
         </div>
       </div>
@@ -1364,7 +1365,14 @@
     document.getElementById('lyrArtist').textContent = t.artist;
     syncPlayVisuals();
 
-    if (t.fileUrl) {
+    if (t.uri && window.AndroidBridge && window.AndroidBridge.playNativeAudio) {
+      const audio = document.getElementById('realAudio');
+      audio.pause();
+      window.AndroidBridge.playNativeAudio(t.uri);
+    } else if (t.fileUrl) {
+      if (window.AndroidBridge && window.AndroidBridge.setNativeAudioPlaying) {
+        window.AndroidBridge.setNativeAudioPlaying(false);
+      }
       const audio = document.getElementById('realAudio');
       audio.src = t.fileUrl;
       audio.play().catch(() => {});
@@ -1374,6 +1382,49 @@
     renderUsbBrowser();
     if (toast) showToast('Playing: ' + t.title);
   }
+
+  function scanUsbHardware() {
+    if (window.AndroidBridge && window.AndroidBridge.scanUsbDrive) {
+      showToast('Scanning USB Pendrive & Storage...');
+      window.AndroidBridge.scanUsbDrive();
+    } else {
+      document.getElementById('usbFileInput').click();
+    }
+  }
+
+  window.onRealUsbScanned = function(jsonStr) {
+    try {
+      const scanned = JSON.parse(jsonStr);
+      if (Array.isArray(scanned) && scanned.length > 0) {
+        usbFolders.length = 0;
+        scanned.forEach(f => {
+          usbFolders.push({
+            name: f.name || 'USB_Folder',
+            tag: f.tag || 'USB Pendrive',
+            tracks: (f.tracks || []).map(tr => ({
+              title: tr.title || 'Audio Track',
+              artist: tr.artist || 'USB Pendrive',
+              dur: tr.dur || 'USB',
+              uri: tr.uri || '',
+              lyrics: ['Playing from USB Pendrive: ' + (tr.title || 'Track')]
+            }))
+          });
+        });
+        curFolderIdx = 0;
+        curTrackIdx = 0;
+        renderUsbBrowser();
+        const firstFolder = usbFolders[0];
+        if (firstFolder && firstFolder.tracks.length > 0) {
+          const firstTrack = firstFolder.tracks[0];
+          document.getElementById('folderTag').textContent = `USB · ${firstFolder.name}`;
+          document.getElementById('trackTitle').textContent = firstTrack.title;
+          document.getElementById('trackArtist').textContent = firstTrack.artist;
+          document.getElementById('totTime').textContent = firstTrack.dur;
+        }
+        showToast('USB Pendrive Ready (' + usbFolders.length + ' folders found)');
+      }
+    } catch (e) {}
+  };
 
   function syncPlayVisuals() {
     document.getElementById('playIconMain').textContent = isPlaying ? '⏸' : '▶';
@@ -1412,6 +1463,9 @@
   function togglePlay() {
     isPlaying = !isPlaying;
     syncPlayVisuals();
+    if (window.AndroidBridge && window.AndroidBridge.setNativeAudioPlaying) {
+      window.AndroidBridge.setNativeAudioPlaying(isPlaying);
+    }
     const audio = document.getElementById('realAudio');
     if (audio.src) {
       if (isPlaying) audio.play().catch(()=>{}); else audio.pause();
@@ -1544,20 +1598,49 @@
     }
   }
 
+  const myStationStreams = {
+    '92.3': 'https://stream.zeno.fm/f3wvbbqmdg8uv',
+    '92.9': 'https://stream.rcs.revma.com/488bf80298uvv',
+    '103.3': 'https://stream.rcs.revma.com/55tyxs0298uvv',
+    '101.8': 'https://stream.rcs.revma.com/79f96r0298uvv',
+    '99.3': 'https://stream.rcs.revma.com/12w89r0298uvv',
+    '94.5': 'https://stream.rcs.revma.com/37829r0298uvv',
+    '96.7': 'https://stream.rcs.revma.com/28429r0298uvv',
+    '105.7': 'https://stream.rcs.revma.com/61829r0298uvv',
+    '104.9': 'https://stream.rcs.revma.com/83829r0298uvv'
+  };
+
   function tuneFm(freqStr, station) {
     curFmFreq = parseFloat(freqStr) || 92.3;
     const fTxt = curFmFreq.toFixed(1);
     const stName = station || myStationNames[fTxt] || 'FM Stereo';
+    isPlaying = true;
+    syncPlayVisuals();
     document.getElementById('fmFreqDisp').textContent = fTxt + ' MHz';
     document.getElementById('stereoIndicator').textContent = 'STEREO · FM TUNER';
     document.getElementById('folderTag').textContent = fTxt + ' MHz · FM Broadcast';
     document.getElementById('trackTitle').textContent = fTxt + ' MHz — ' + stName;
-    document.getElementById('trackArtist').textContent = 'Hardware Aerial FM Tuner';
-    document.getElementById('liveLyricLine').textContent = '"Receiving live FM ' + fTxt + ' MHz broadcast..."';
+    document.getElementById('trackArtist').textContent = 'Hardware MCU + Digital FM Tuner';
+    document.getElementById('liveLyricLine').textContent = '"Receiving live FM ' + fTxt + ' MHz (' + stName + ')..."';
     renderFmFavs();
+
+    // 1. Tune physical Android Car Player MCU radio chip
     if (window.AndroidBridge && window.AndroidBridge.tuneHardwareFm) {
       window.AndroidBridge.tuneHardwareFm(fTxt);
     }
+
+    // 2. Also start digital audio stream fallback if online so sound always plays
+    const streamUrl = myStationStreams[fTxt];
+    if (streamUrl) {
+      if (window.AndroidBridge && window.AndroidBridge.playNativeAudio) {
+        window.AndroidBridge.playNativeAudio(streamUrl);
+      } else {
+        const audio = document.getElementById('realAudio');
+        audio.src = streamUrl;
+        audio.play().catch(() => {});
+      }
+    }
+    showToast('Tuned FM ' + fTxt + ' MHz · ' + stName);
   }
 
   function stepFm(delta) {
