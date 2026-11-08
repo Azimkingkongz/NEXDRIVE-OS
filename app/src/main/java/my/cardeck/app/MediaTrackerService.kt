@@ -14,6 +14,7 @@ import kotlin.concurrent.thread
 data class LyricLine(val timeSec: Double, val text: String)
 
 object MediaStateHolder {
+    @Volatile var sourceApp: String = ""
     @Volatile var title: String = ""
     @Volatile var artist: String = ""
     @Volatile var positionMs: Long = 0L
@@ -101,6 +102,8 @@ object MediaTrackerService {
     private val mediaReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent == null) return
+            val act = intent.action ?: ""
+            val pkgExtra = intent.getStringExtra("package") ?: intent.getStringExtra("app") ?: ""
             val track = intent.getStringExtra("track") ?: intent.getStringExtra("title")
             val artist = intent.getStringExtra("artist") ?: ""
             val length = intent.getLongExtra("length", 240000L)
@@ -108,6 +111,13 @@ object MediaTrackerService {
             val playing = intent.getBooleanExtra("playing", true)
 
             if (!track.isNullOrEmpty()) {
+                if (act.contains("spotify", true) || pkgExtra.contains("spotify", true)) {
+                    MediaStateHolder.sourceApp = "spotify"
+                } else if (act.contains("bitchord", true) || pkgExtra.contains("bitchord", true)) {
+                    MediaStateHolder.sourceApp = "bitchord"
+                } else if (MediaStateHolder.sourceApp.isEmpty()) {
+                    MediaStateHolder.sourceApp = "spotify"
+                }
                 MediaStateHolder.title = track
                 MediaStateHolder.artist = artist
                 MediaStateHolder.durationMs = if (length > 0) length else 240000L
