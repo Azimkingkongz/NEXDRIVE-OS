@@ -28,8 +28,8 @@ jobs:
 
       - name: Build NEXDRIVE OS APK
         run: |
-          gradle assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk NEXDRIVE-OS-v2.0.apk
+          gradle assembleRelease --stacktrace
+          cp app/build/outputs/apk/release/app-release-unsigned.apk NEXDRIVE-OS-v2.0.apk || cp app/build/outputs/apk/release/app-release.apk NEXDRIVE-OS-v2.0.apk || cp app/build/outputs/apk/debug/app-debug.apk NEXDRIVE-OS-v2.0.apk
 
       - name: Upload APK to GitHub Actions Artifacts
         uses: actions/upload-artifact@v4
